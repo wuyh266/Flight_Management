@@ -24,6 +24,9 @@ private:
     void loadTicketInfo();
     void calculateTotal();
 
+    //检测时间冲突
+    bool checkTimeConflict(const QString &passengerIDCard, int newTicketId);
+    QString getConflictDetails(const QString &passengerIDCard, int newTicketId);
     Ui::OrderDialog *ui;
     int ticketId;
     int userId;
