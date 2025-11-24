@@ -42,7 +42,7 @@ Deal::Deal(const QString &username, QWidget *parent)
     ui->stackedWidget->addWidget(m_personalCenterPage);
     connect(m_personalCenterPage, &Single_Center::backRequested, this, &Deal::showTicketSearchPage);
 
-    m_userProfilePage = new UserProfile(this);
+    m_userProfilePage = new UserProfile(currentUsername,this);
     ui->stackedWidget->addWidget(m_userProfilePage);
 
     connect(m_userProfilePage, &UserProfile::backRequested, this, &Deal::showTicketSearchPage);

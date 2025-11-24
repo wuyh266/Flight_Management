@@ -13,6 +13,7 @@ class UserProfile : public QWidget
 
 public:
     explicit UserProfile(QWidget *parent = nullptr);
+    explicit UserProfile(const QString &username,QWidget *parent = nullptr);
     ~UserProfile();
 
 signals:
@@ -25,9 +26,11 @@ private slots:
     void on_pushButton_8_clicked(); // 注册
     void on_pushButton_7_clicked(); // 登录
     void on_pushButton_9_clicked(); // 注销
+    void on_pushButton_10_clicked();//增加乘客
 
 private:
     Ui::UserProfile *ui;
+    QString currentUsername;
 };
 
 #endif // USERPROFILE_H

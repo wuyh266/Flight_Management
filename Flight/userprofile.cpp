@@ -3,8 +3,11 @@
 #include "sign_in.h"
 #include <QMessageBox>
 UserProfile::UserProfile(QWidget *parent)
+#include "passenger.h"
+UserProfile::UserProfile(const QString &username,QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::UserProfile)
+    , currentUsername(username)
 {
     ui->setupUi(this);
     connect(ui->btn_back, &QPushButton::clicked, this, &UserProfile::on_btn_back_clicked);
@@ -38,4 +41,8 @@ void UserProfile::on_pushButton_9_clicked()
     if (ret == QMessageBox::Yes) {
         emit logoutRequested();
     }
+}
+void UserProfile:: on_pushButton_10_clicked(){
+    passenger*s=new passenger(currentUsername);
+    s->show();
 }
