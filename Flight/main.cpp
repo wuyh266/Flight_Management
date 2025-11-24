@@ -1,5 +1,4 @@
 #include "MainWindow.h"
-
 #include <QApplication>
 #include <QSqlDatabase>
 #include <QDebug>
@@ -9,7 +8,7 @@ int main(int argc, char *argv[])
     QSqlDatabase dbcon;
     dbcon = QSqlDatabase::addDatabase("QODBC");  // ODBC 驱动
     dbcon.setPort(3306);                          // 端口号，默认
-    dbcon.setDatabaseName("flight");           // ODBC 数据源名称
+    dbcon.setDatabaseName("root");           // ODBC 数据源名称
     bool ok = dbcon.open();
     if(!ok)
         qDebug() << "Error,  persondatabase 数据库文件打开失败！";
