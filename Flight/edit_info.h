@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 #ifndef EDIT_INFOR_H
 #define EDIT_INFOR_H
 
@@ -30,3 +31,37 @@ private:
 };
 
 #endif // EDIT_INFOR_H
+=======
+#ifndef EDIT_INFOR_H
+#define EDIT_INFOR_H
+
+#include <QDialog>
+
+namespace Ui {
+class edit_info;
+}
+
+class edit_info : public QDialog
+{
+    Q_OBJECT
+
+public:
+    explicit edit_info(QWidget *parent = nullptr);
+    explicit edit_info(QString userID,QString username,QWidget*parent=nullptr);
+    ~edit_info();
+    virtual void accept() override;
+signals:
+    void change_name(QString &newname);
+    void change_jianjie(QString &jianjie);
+private slots:
+    void on_buttonBox_accepted();
+    void on_pushButton_clicked();
+
+private:
+    QString userID;
+    QString username;
+    Ui::edit_info *ui;
+};
+
+#endif // EDIT_INFOR_H
+>>>>>>> 8f1eecc9d2462579be0967b76380682856f788c7
