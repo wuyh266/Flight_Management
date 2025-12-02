@@ -16,6 +16,19 @@ favorite_dialog::favorite_dialog(QWidget *parent)
 {
     ui->setupUi(this);
 }
+<<<<<<< HEAD
+
+favorite_dialog::favorite_dialog(const QString &userID, QWidget *parent)
+    : QWidget(parent)
+    , ui(new Ui::favorite_dialog)
+    , currentUserID(userID)
+{
+    ui->setupUi(this);
+    initTable();
+    loadFavorites(); // 构造时加载数据
+}
+
+=======
 favorite_dialog::favorite_dialog(const QString &username,QWidget *parent)
     :QWidget(parent)
     ,ui(new Ui::favorite_dialog)
@@ -24,21 +37,44 @@ favorite_dialog::favorite_dialog(const QString &username,QWidget *parent)
     ui->setupUi(this);
     initTable();
 }
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
 favorite_dialog::~favorite_dialog()
 {
     delete ui;
 }
+<<<<<<< HEAD
+
+=======
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
 void favorite_dialog::initTable()
 {
     QStringList headers;
     headers << "类型" << "编号" << "出发地" << "目的地"
+<<<<<<< HEAD
+            << "出发时间" << "到达时间" << "价格（元）" << "公司" <<"收藏";
+    ui->tableWidget_favorites->setHorizontalHeaderLabels(headers);
+=======
             << "出发时间" << "到达时间" << "价格（元）" << "公司" <<"收藏";                                                                    ui->tableWidget_favorites->setHorizontalHeaderLabels(headers);
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     ui->tableWidget_favorites->setColumnCount(headers.size());
     ui->tableWidget_favorites->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget_favorites->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_favorites->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_favorites->verticalHeader()->setVisible(false);
 }
+<<<<<<< HEAD
+
+void favorite_dialog::loadFavorites()
+{
+    if (currentUserID.isEmpty()) {
+        return;
+    }
+
+    // 清空现有表格
+    ui->tableWidget_favorites->setRowCount(0);
+
+    // 查询收藏夹内容 (直接使用 currentUserID)
+=======
 void favorite_dialog::loadFavorites()
 {
     if (currentUsername.isEmpty()) {
@@ -60,6 +96,7 @@ void favorite_dialog::loadFavorites()
     ui->tableWidget_favorites->setRowCount(0);
 
     // 3. 查询收藏夹内容
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     QSqlQuery query;
     QString sql = "SELECT t.TicketID, t.TicketType, t.TicketNo, t.DepartureCity, t.ArrivalCity, "
                   "t.DepartureTime, t.ArrivalTime, t.Price, t.Company "
@@ -68,7 +105,11 @@ void favorite_dialog::loadFavorites()
     sql += " ORDER BY t.DepartureTime DESC";
 
     query.prepare(sql);
+<<<<<<< HEAD
+    query.bindValue(":userId", currentUserID);
+=======
     query.bindValue(":userId", userId);
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
 
     if (!query.exec()) {
         QMessageBox::critical(this, "错误", "查询收藏列表失败：" + query.lastError().text());
@@ -119,7 +160,10 @@ void favorite_dialog::on_btn_refresh_clicked()
     refreshFavoriteList();
 }
 
+<<<<<<< HEAD
+=======
 // [新增] 移除收藏按钮槽函数实现 (示例)
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
 void favorite_dialog::onRemoveFavorite()
 {
     QPushButton *btn = qobject_cast<QPushButton*>(sender());
@@ -127,6 +171,11 @@ void favorite_dialog::onRemoveFavorite()
 
     int ticketId = btn->property("ticketId").toInt();
 
+<<<<<<< HEAD
+    QSqlQuery removeQuery;
+    removeQuery.prepare("DELETE FROM favorites WHERE UserID = :userId AND TicketID = :ticketId");
+    removeQuery.bindValue(":userId", currentUserID);
+=======
     QSqlQuery userQuery;
     userQuery.prepare("SELECT UserID FROM users WHERE Username = :username");
     userQuery.bindValue(":username", currentUsername);
@@ -139,15 +188,33 @@ void favorite_dialog::onRemoveFavorite()
     QSqlQuery removeQuery;
     removeQuery.prepare("DELETE FROM favorites WHERE UserID = :userId AND TicketID = :ticketId");
     removeQuery.bindValue(":userId", userId);
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     removeQuery.bindValue(":ticketId", ticketId);
 
     if (removeQuery.exec()) {
         QMessageBox::information(this, "成功", "已从收藏夹移除！");
+<<<<<<< HEAD
+        refreshFavoriteList();
+=======
         refreshFavoriteList(); // 刷新列表以移除该行
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     } else {
         QMessageBox::critical(this, "错误", "移除失败：" + removeQuery.lastError().text());
     }
 }
+<<<<<<< HEAD
+
+void favorite_dialog::on_searchBtn_clicked()
+{
+    if (currentUserID.isEmpty()) return;
+
+    QString depCity = ui->lineEdit_dep->text().trimmed();
+    QString arrCity = ui->lineEdit_arr->text().trimmed();
+    QDate startDate = ui->dateEdit_begin->date();
+    QDate endDate = ui->dateEdit_end->date();
+    QString type = ui->comboBox_type->currentText();
+
+=======
 void favorite_dialog::on_searchBtn_clicked()
 {
     if (currentUsername.isEmpty()) {
@@ -165,10 +232,21 @@ void favorite_dialog::on_searchBtn_clicked()
     QDate startDate = ui->dateEdit_begin->date();             // 开始日期
     QDate endDate = ui->dateEdit_end->date();                 // 结束日期
     QString type = ui->comboBox_type->currentText();          // 交通类型
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     QString sql = "SELECT t.TicketID, t.TicketType, t.TicketNo, t.DepartureCity, t.ArrivalCity, "
                   "t.DepartureTime, t.ArrivalTime, t.Price, t.Company "
                   "FROM favorites f JOIN tickets t ON f.TicketID = t.TicketID "
                   "WHERE f.UserID = :userId";
+<<<<<<< HEAD
+
+    if (!depCity.isEmpty()) sql += " AND t.DepartureCity LIKE :depCity";
+    if (!arrCity.isEmpty()) sql += " AND t.ArrivalCity LIKE :arrCity";
+
+    sql += " AND DATE(t.DepartureTime) >= :startDate";
+    sql += " AND DATE(t.DepartureTime) <= :endDate";
+
+    if (type != "全部") {
+=======
     if (!depCity.isEmpty()) {
         sql += " AND t.DepartureCity LIKE :depCity";
     }
@@ -180,11 +258,25 @@ void favorite_dialog::on_searchBtn_clicked()
     sql += " AND DATE(t.DepartureTime) <= :endDate";
     if (type != "全部") {
         // 数据库存的是 Flight/Train/Bus，界面显示的是中文，需要转换
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
         if (type == "飞机") sql += " AND t.TicketType = 'Flight'";
         else if (type == "火车") sql += " AND t.TicketType = 'Train'";
         else if (type == "汽车") sql += " AND t.TicketType = 'Bus'";
     }
 
+<<<<<<< HEAD
+    sql += " ORDER BY t.DepartureTime DESC";
+
+    QSqlQuery query;
+    query.prepare(sql);
+    query.bindValue(":userId", currentUserID);
+    query.bindValue(":startDate", startDate);
+    query.bindValue(":endDate", endDate);
+
+    if (!depCity.isEmpty()) query.bindValue(":depCity", "%" + depCity + "%");
+    if (!arrCity.isEmpty()) query.bindValue(":arrCity", "%" + arrCity + "%");
+
+=======
     sql += " ORDER BY t.DepartureTime DESC"; // 排序
     QSqlQuery query;
     query.prepare(sql);
@@ -198,11 +290,20 @@ void favorite_dialog::on_searchBtn_clicked()
     if (!arrCity.isEmpty()) {
         query.bindValue(":arrCity", "%" + arrCity + "%"); // 模糊查询
     }
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
     if (!query.exec()) {
         QMessageBox::critical(this, "错误", "搜索失败：" + query.lastError().text());
         return;
     }
 
+<<<<<<< HEAD
+    ui->tableWidget_favorites->setRowCount(0);
+    int row = 0;
+    while (query.next()) {
+        ui->tableWidget_favorites->insertRow(row);
+        int ticketId = query.value(0).toInt();
+        // ... (设置 Item 0-7)
+=======
     ui->tableWidget_favorites->setRowCount(0); // 清空旧数据
 
     int row = 0;
@@ -210,10 +311,29 @@ void favorite_dialog::on_searchBtn_clicked()
         ui->tableWidget_favorites->insertRow(row);
 
         int ticketId = query.value(0).toInt();
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
         QString ticketType = query.value(1).toString();
         QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
 
         ui->tableWidget_favorites->setItem(row, 0, new QTableWidgetItem(typeName));
+<<<<<<< HEAD
+        ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(2).toString()));
+        ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(3).toString()));
+        ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()));
+        QDateTime depTime = query.value(5).toDateTime();
+        ui->tableWidget_favorites->setItem(row, 4, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
+        QDateTime arrTime = query.value(6).toDateTime();
+        ui->tableWidget_favorites->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
+        ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(7).toDouble(), 'f', 2)));
+        ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(8).toString()));
+
+        QPushButton *btnRemove = new QPushButton("移除");
+        btnRemove->setProperty("ticketId", ticketId);
+        connect(btnRemove, &QPushButton::clicked, this, &favorite_dialog::onRemoveFavorite);
+        ui->tableWidget_favorites->setCellWidget(row, 8, btnRemove);
+        row++;
+    }
+=======
         ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(2).toString())); // 编号
         ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(3).toString())); // 出发地
         ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString())); // 目的地
@@ -239,4 +359,5 @@ void favorite_dialog::on_searchBtn_clicked()
     if (row == 0) {
         QMessageBox::information(this, "提示", "未找到符合条件的收藏记录。");
     }
+>>>>>>> 8baf20252257e6424a56f672cef2e41d0128f62f
 }

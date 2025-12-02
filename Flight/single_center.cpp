@@ -43,7 +43,7 @@ void Single_Center::initTable()
 {
     ui->tableWidget_orders->setColumnCount(9);
     QStringList headers;
-    headers << "订单号" << "票务类型" << "路线" << "出发时间" << "到达时间" 
+    headers << "订单号" << "票务类型" << "路线" << "出发时间" << "到达时间"
             << "数量" << "总价(元)" << "状态" << "操作";
     ui->tableWidget_orders->setHorizontalHeaderLabels(headers);
     ui->tableWidget_orders->horizontalHeader()->setStretchLastSection(true);
@@ -57,14 +57,12 @@ int Single_Center::getUserId()
     if (currentUsername.isEmpty()) {
         return -1;
     }
-
-    QSqlQuery query;
-    query.prepare("SELECT UserID FROM users WHERE Username = ?");
-    query.addBindValue(currentUsername);
-    if (!query.exec() || !query.next()) {
-        return -1;
+    bool ok;
+    int userId = currentUsername.toInt(&ok);
+    if (ok && userId > 0) {
+        return userId;
     }
-    return query.value(0).toInt();
+    return -1;
 }
 
 void Single_Center::loadOrders()
@@ -75,12 +73,12 @@ void Single_Center::loadOrders()
         return;
     }
 
-    if (!QSqlDatabase::database().isOpen()) {
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
         return;
     }
-
-    QSqlQuery query;
+    QSqlQuery query(db);  // 显式指定数据库连接
     query.prepare("SELECT o.OrderID, o.OrderNo, o.OrderStatus, o.TicketCount, o.TotalPrice, "
                   "o.OrderTime, t.TicketType, t.DepartureCity, t.ArrivalCity, "
                   "t.DepartureTime, t.ArrivalTime "
@@ -94,9 +92,7 @@ void Single_Center::loadOrders()
         QMessageBox::critical(this, "错误", "查询订单失败：" + query.lastError().text());
         return;
     }
-
     ui->tableWidget_orders->setRowCount(0);
-
     int row = 0;
     while (query.next()) {
         ui->tableWidget_orders->insertRow(row);
@@ -113,6 +109,22 @@ void Single_Center::loadOrders()
 
         QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
         QString statusName = status == "Paid" ? "已支付" : (status == "Cancelled" ? "已取消" : "待支付");
+        //判断订单是否过期，是否支付
+        if (status == "Paid") {
+            if (arrTime < QDateTime::currentDateTime()) {
+                statusName = "已过期";
+            } else {
+                statusName = "已支付";
+            }
+        } else if (status == "Cancelled") {
+            statusName = "已取消";
+        } else {
+            if (depTime < QDateTime::currentDateTime()) {
+                statusName = "已过期";
+            } else {
+                statusName = "待支付";
+            }
+        }
 
         ui->tableWidget_orders->setItem(row, 0, new QTableWidgetItem(orderNo));
         ui->tableWidget_orders->setItem(row, 1, new QTableWidgetItem(typeName));
@@ -124,17 +136,23 @@ void Single_Center::loadOrders()
         ui->tableWidget_orders->setItem(row, 7, new QTableWidgetItem(statusName));
 
         // 添加取消订单按钮（只有已支付的订单可以取消）
-        if (status == "Paid") {
+        if (status == "Paid" && arrTime > QDateTime::currentDateTime()) {
             QPushButton *btnCancel = new QPushButton("取消订单");
             btnCancel->setProperty("orderId", orderId);
             connect(btnCancel, &QPushButton::clicked, this, &Single_Center::onCancelOrder);
             ui->tableWidget_orders->setCellWidget(row, 8, btnCancel);
+        } else if(status == "Paid" && arrTime < QDateTime::currentDateTime()) {
+            QPushButton *btndelete = new QPushButton("删除订单");
+            btndelete->setProperty("orderId", orderId);
+            connect(btndelete, &QPushButton::clicked, this, &Single_Center::onDeleteOrder);
+            ui->tableWidget_orders->setCellWidget(row, 8, btndelete);
         } else {
             ui->tableWidget_orders->setItem(row, 8, new QTableWidgetItem("-"));
         }
 
         row++;
     }
+    query.finish();
 }
 
 void Single_Center::refreshOrderList()
@@ -149,19 +167,20 @@ void Single_Center::onCancelOrder()
 
     int orderId = btn->property("orderId").toInt();
 
-    int ret = QMessageBox::question(this, "确认", "确定要取消这个订单吗？", 
-                                     QMessageBox::Yes | QMessageBox::No);
+    int ret = QMessageBox::question(this, "确认", "确定要取消这个订单吗？",
+                                    QMessageBox::Yes | QMessageBox::No);
     if (ret != QMessageBox::Yes) {
         return;
     }
 
-    if (!QSqlDatabase::database().isOpen()) {
+    QSqlDatabase db = QSqlDatabase::database(); // 移动到外面
+    if (!db.isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
         return;
     }
 
     // 获取订单信息
-    QSqlQuery orderQuery;
+    QSqlQuery orderQuery(db);
     orderQuery.prepare("SELECT TicketID, TicketCount FROM orders WHERE OrderID = ?");
     orderQuery.addBindValue(orderId);
     if (!orderQuery.exec() || !orderQuery.next()) {
@@ -170,43 +189,98 @@ void Single_Center::onCancelOrder()
     }
     int ticketId = orderQuery.value(0).toInt();
     int ticketCount = orderQuery.value(1).toInt();
-
+    orderQuery.finish();
     // 开始事务
-    QSqlDatabase::database().transaction();
+    db.transaction();
 
     try {
         // 更新订单状态
-        QSqlQuery updateOrderQuery;
+        QSqlQuery updateOrderQuery(db);
         updateOrderQuery.prepare("UPDATE orders SET OrderStatus = 'Cancelled' WHERE OrderID = ?");
         updateOrderQuery.addBindValue(orderId);
         if (!updateOrderQuery.exec()) {
-            QSqlDatabase::database().rollback();
+            db.rollback();
             QMessageBox::critical(this, "错误", "取消订单失败：" + updateOrderQuery.lastError().text());
             return;
         }
 
         // 恢复座位数
-        QSqlQuery updateTicketQuery;
+        QSqlQuery updateTicketQuery(db);
         updateTicketQuery.prepare("UPDATE tickets SET AvailableSeats = AvailableSeats + ? WHERE TicketID = ?");
         updateTicketQuery.addBindValue(ticketCount);
         updateTicketQuery.addBindValue(ticketId);
         if (!updateTicketQuery.exec()) {
-            QSqlDatabase::database().rollback();
+            db.rollback();
             QMessageBox::critical(this, "错误", "恢复座位失败：" + updateTicketQuery.lastError().text());
             return;
         }
 
         // 提交事务
-        QSqlDatabase::database().commit();
-        QMessageBox::information(this, "成功", "订单已取消！");
+        db.commit();
+        QMessageBox::information(this, "成功", "订单已取消！订单金额已按原路返回！");
         refreshOrderList();
     } catch (...) {
-        QSqlDatabase::database().rollback();
+        db.rollback();
         QMessageBox::critical(this, "错误", "取消订单过程中发生错误！");
+    }
+}
+
+//删除按钮
+void Single_Center::onDeleteOrder()
+{
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn) return;
+
+    int orderId = btn->property("orderId").toInt();
+
+    int ret = QMessageBox::question(this, "确认", "确定要删除这个订单吗？",
+                                    QMessageBox::Yes | QMessageBox::No);
+    if (ret != QMessageBox::Yes) {
+        return;
+    }
+
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        QMessageBox::warning(this, "错误", "数据库未连接！");
+        return;
+    }
+
+    // 获取订单信息
+    // 修复：删除重复声明
+    QSqlQuery orderQuery(db);
+    orderQuery.prepare("SELECT TicketID, TicketCount FROM orders WHERE OrderID = ?");
+    orderQuery.addBindValue(orderId);
+    if (!orderQuery.exec() || !orderQuery.next()) {
+        QMessageBox::warning(this, "错误", "获取订单信息失败！");
+        return;
+    }
+    orderQuery.finish();
+    // 开始事务
+    db.transaction();
+
+    try {
+        // 更新订单状态
+        // 修复：删除重复声明
+        QSqlQuery updateOrderQuery(db);
+        updateOrderQuery.prepare("UPDATE orders SET OrderStatus = 'Cancelled' WHERE OrderID = ?");
+        updateOrderQuery.addBindValue(orderId);
+        if (!updateOrderQuery.exec()) {
+            db.rollback();
+            QMessageBox::critical(this, "错误", "删除订单失败：" + updateOrderQuery.lastError().text());
+            return;
+        }
+
+        // 提交事务
+        db.commit();
+        QMessageBox::information(this, "成功", "订单已删除！");
+        refreshOrderList();
+    } catch (...) {
+        db.rollback();
+        QMessageBox::critical(this, "错误", "删除订单过程中发生错误！");
     }
 }
 
 void Single_Center::onViewOrder()
 {
-    // 可以在这里添加查看订单详情的功能
+
 }
