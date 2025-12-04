@@ -13,8 +13,15 @@
 #include <QHeaderView>
 #include <QDateTime>
 #include <QTableWidgetItem>
+#include <QElapsedTimer> // 新增：用于性能计时
+#include <QScrollBar>    // 新增：控制滚动条
 #include "mainwindow.h"
 #include "userprofile.h"
+
+#define PAGE_SIZE 50  // 每页显示50条
+int currentPage = 1;
+int totalPage = 0;
+
 Deal::Deal(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Deal)
@@ -25,6 +32,8 @@ Deal::Deal(QWidget *parent)
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit->setMinimumDate(QDate::currentDate());
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+
+    initPagination();
 }
 
 Deal::Deal(const QString &userID, QWidget *parent)
@@ -37,17 +46,30 @@ Deal::Deal(const QString &userID, QWidget *parent)
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit->setMinimumDate(QDate::currentDate());
 
-    //initDatabase();
-    // searchTickets();
-    // testFlightInfoQuery();
+    searchTickets(currentPage);
+
     m_personalCenterPage = new Single_Center(currentUserID, this);
     ui->stackedWidget->addWidget(m_personalCenterPage);
     connect(m_personalCenterPage, &Single_Center::backRequested, this, &Deal::showTicketSearchPage);
 
     m_userProfilePage = new UserProfile(userID,this);
     ui->stackedWidget->addWidget(m_userProfilePage);
-    m_userProfilePage->getData(currentUserID);
     connect(m_userProfilePage, &UserProfile::backRequested, this, &Deal::showTicketSearchPage);
+
+    // 创建收藏夹页面对象
+    m_favoriteDialogPage = new favorite_dialog(currentUserID, this);
+
+    // 将其添加到 stackedWidget (页面栈) 中
+    ui->stackedWidget->addWidget(m_favoriteDialogPage);
+
+    // 连接信号：从收藏夹点击“返回”时，回到票务搜索页
+    connect(m_favoriteDialogPage, &favorite_dialog::backRequested, this, &Deal::showTicketSearchPage);
+
+    //连接信号：从个人中心点击“我的收藏”时，跳转到收藏夹
+    connect(m_userProfilePage, &UserProfile::myFavoritesRequested, this, [=](){
+        m_favoriteDialogPage->refreshFavoriteList();
+        ui->stackedWidget->setCurrentWidget(m_favoriteDialogPage);
+    });
 
     connect(m_userProfilePage, &UserProfile::myOrdersRequested, this, [=](){
         m_personalCenterPage->refreshOrderList();
@@ -60,28 +82,15 @@ Deal::Deal(const QString &userID, QWidget *parent)
         loginWindow->show();
         this->close();
     });
+
+    initPagination();
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
-    searchTickets();
 }
 
 Deal::~Deal()
 {
     delete ui;
 }
-
-//预留flightdb
-// void Deal::initDatabase(){
-//     QSqlDatabase db=QSqlDatabase::addDatabase("QODBC");
-//     db.setDatabaseName("flight");
-//     db.setHostName("127.0.0.1");
-//     db.setPort(3306);
-
-//     if(!db.open()){
-//         QMessageBox::critical(this,"数据库错误","连接失败" +db.lastError().text());
-//     }
-//     else
-//         qDebug<<"数据库连接成功！";
-// }
 
 
 void Deal::initTable()
@@ -101,16 +110,194 @@ void Deal::initTable()
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_tickets->verticalHeader()->setVisible(false);
 
+    // 优化：关闭表格自动刷新，批量插入数据后再刷新
+    ui->tableWidget_tickets->setUpdatesEnabled(false);
 }
 
-void Deal::searchTickets()
+int Deal::getTotalPage()
 {
     QString from = ui->lineEdit_from->text().trimmed();
     QString to = ui->lineEdit_to->text().trimmed();
     QDate date = ui->dateEdit->date();
-    QString type = ui->comboBox_type->currentText();
+    QString startTime = date.toString("yyyy-MM-dd 00:00:00");
 
-    // 检查数据库连接（保持不变）
+    // 检查数据库连接
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isValid() || !db.isOpen()) {
+        return 0;
+    }
+
+    // 查询符合条件的总条数
+    QString countSql = "SELECT COUNT(*) FROM flight_info WHERE status = 'On Time' "
+                       "AND departure_time >= :start_time ";
+    if (!from.isEmpty()) {
+        countSql += "AND departure_city LIKE :from ";
+    }
+    if (!to.isEmpty()) {
+        countSql += "AND arrival_city LIKE :to ";
+    }
+
+    QSqlQuery countQuery(db);
+    countQuery.prepare(countSql);
+    countQuery.bindValue(":start_time", startTime);
+    if (!from.isEmpty()) {
+        countQuery.bindValue(":from", from + "%");
+    }
+    if (!to.isEmpty()) {
+        countQuery.bindValue(":to", to + "%");
+    }
+
+    int totalCount = 0;
+    if (countQuery.exec()) {
+        // 检查是否有结果
+        if (countQuery.next()) {
+            totalCount = countQuery.value(0).toInt();
+        }
+
+        countQuery.finish();
+    } else {
+        qDebug() << "查询总条数失败：" << countQuery.lastError().text();
+
+        countQuery.finish();
+        return 0;
+    }
+
+    // 计算总页数（向上取整）
+    if (totalCount == 0) {
+        return 0;
+    }
+    return (totalCount + PAGE_SIZE - 1) / PAGE_SIZE;
+}
+
+void Deal::initPagination()
+{
+    ui->lineEdit_pageNum->setAlignment(Qt::AlignCenter);
+
+    QIntValidator *validator = new QIntValidator(1, 999, this);
+    ui->lineEdit_pageNum->setValidator(validator);
+    ui->lineEdit_pageNum->setAlignment(Qt::AlignCenter);
+    // 上一页按钮
+    connect(ui->btn_prev, &QPushButton::clicked, this, [=](){
+        if (currentPage > 1) {
+            currentPage--;
+            searchTickets(currentPage);
+            updatePageContainerText();
+            ui->btn_prev->setEnabled(currentPage > 1);
+        }
+    });
+
+    // 下一页按钮
+    connect(ui->btn_next, &QPushButton::clicked, this, [=](){
+        currentPage++;
+        searchTickets(currentPage);
+        updatePageContainerText();
+        ui->btn_next->setEnabled(currentPage < totalPage);
+    });
+
+    connect(ui->lineEdit_pageNum, &QLineEdit::returnPressed, this, &Deal::on_lineEdit_pageNum_returnPressed);
+
+    // 初始化分页文本
+    updatePageContainerText();
+}
+
+void Deal::updatePageContainerText()
+{
+    // 无数据时
+    if (totalPage == 0) {
+        ui->label_pageInfo->setText("第        页 / 共 0 页");
+        ui->lineEdit_pageNum->setEnabled(false);
+        ui->lineEdit_pageNum->setText("");
+        return;
+    }
+
+    // 有数据时：拼接“第 [输入框] 页 / 共 X 页”
+    QString pageText = QString("第        页 / 共 %1 页").arg(totalPage);
+    ui->label_pageInfo->setText(pageText);
+    ui->lineEdit_pageNum->setEnabled(true);
+    ui->lineEdit_pageNum->setText(QString::number(currentPage));
+
+    // 确保输入框在标签上层
+    ui->lineEdit_pageNum->raise();
+}
+
+void Deal::on_lineEdit_pageNum_returnPressed()
+{
+    // 无数据时直接返回
+    if (totalPage == 0) {
+        QMessageBox::warning(this, "提示", "暂无数据，无法跳转！");
+        ui->lineEdit_pageNum->setText("");
+        return;
+    }
+
+    // 1. 获取输入并校验格式
+    QString inputText = ui->lineEdit_pageNum->text().trimmed();
+    if (inputText.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请输入有效页码！");
+        ui->lineEdit_pageNum->setText(QString::number(currentPage)); // 恢复当前页
+        return;
+    }
+
+    bool isNumber;
+    int inputPage = inputText.toInt(&isNumber);
+    if (!isNumber) {
+        QMessageBox::warning(this, "提示", "页码必须是正整数！");
+        ui->lineEdit_pageNum->setText(QString::number(currentPage)); // 恢复当前页
+        return;
+    }
+
+    // 2. 边界校验
+    int targetPage = inputPage;
+    if (targetPage < 1) {
+        targetPage = 1;
+        QMessageBox::information(this, "提示", "都说了要向前了~");
+    } else if (targetPage > totalPage) {
+        targetPage = totalPage;
+        QMessageBox::information(this, "提示", QString("已经到底了~"));
+    }
+
+    // 3. 执行跳转
+    currentPage = targetPage;
+    searchTickets(currentPage);
+    // 更新按钮状态
+    ui->btn_prev->setEnabled(currentPage > 1);
+    ui->btn_next->setEnabled(currentPage < totalPage);
+}
+
+void Deal::searchTickets(int pageNum)
+{
+    QElapsedTimer timer;
+    timer.start(); // 计时，用于调试优化效果
+
+    totalPage = getTotalPage();
+
+    // 如果总页数为0（无数据），直接清空表格并返回
+    if (totalPage == 0) {
+        ui->tableWidget_tickets->setUpdatesEnabled(false);
+        ui->tableWidget_tickets->setRowCount(0);
+        ui->tableWidget_tickets->setUpdatesEnabled(true);
+        ui->label_pageInfo->setText("暂无符合条件的数据");
+        ui->btn_prev->setEnabled(false);
+        ui->btn_next->setEnabled(false);
+        updatePageContainerText();
+        return;
+    }
+
+    if (pageNum < 1) {
+        pageNum = 1;
+        currentPage = 1;
+        QMessageBox::information(this, "提示", "都说了要向前了~");
+    } else if (pageNum > totalPage) {
+        pageNum = totalPage;
+        currentPage = totalPage;
+        QMessageBox::information(this, "提示", QString("已经到底了~"));
+    }
+
+    QString from = ui->lineEdit_from->text().trimmed();
+    QString to = ui->lineEdit_to->text().trimmed();
+    QDate date = ui->dateEdit->date();
+
+
+    // 检查数据库连接
     QSqlDatabase db = QSqlDatabase::database();
     if (!db.isValid()) {
         QMessageBox::warning(this, "错误", "数据库连接未初始化！");
@@ -138,7 +325,10 @@ void Deal::searchTickets()
     if (!to.isEmpty()) {
         sql += "AND arrival_city LIKE :to ";
     }
-    sql += "ORDER BY departure_time ASC";
+
+    int offset = (pageNum - 1) * PAGE_SIZE;
+    offset = qMax(offset, 0);
+    sql += QString("ORDER BY departure_time ASC LIMIT %1, %2").arg(offset).arg(PAGE_SIZE);
 
 
     QSqlQuery query(db);
@@ -150,23 +340,17 @@ void Deal::searchTickets()
         return;
     }
 
-    // 3. 关键修复：绑定参数时显式指定参数类型（ODBC 驱动兼容）
     query.bindValue(":start_time", startTime);
+
     if (!from.isEmpty()) {
-        query.bindValue(":from", "%" + from + "%");
+        query.bindValue(":from", from + "%");
     }
     if (!to.isEmpty()) {
-        query.bindValue(":to", "%" + to + "%");
+        query.bindValue(":to", to + "%");
     }
 
 
-    // 调试输出（验证参数格式）
-    qDebug() << "执行SQL：" << sql;
-    qDebug() << "时间参数：" << startTime;
-    qDebug() << "查询参数：" << query.boundValues();
-
-
-    // 5. 执行查询（添加错误详情调试）
+    //执行查询（添加错误详情调试）
     if (!query.exec()) {
         QMessageBox::critical(this, "查询错误",
             "SQL执行失败：" + query.lastError().text() + "\n"
@@ -175,7 +359,7 @@ void Deal::searchTickets()
         return;
     }
 
-    query.seek(-1);
+    ui->tableWidget_tickets->setUpdatesEnabled(false);
     ui->tableWidget_tickets->setRowCount(0);
     int row = 0;
 
@@ -215,16 +399,25 @@ void Deal::searchTickets()
         row++;
     }
 
-    // 8. 调整表格列宽，优化显示
+    //调整表格列宽，优化显示
+    ui->tableWidget_tickets->setUpdatesEnabled(true);
     ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+
+    updatePageContainerText();
+    // 更新分页按钮状态（核心：禁用/启用上一页/下一页）
+    ui->btn_prev->setEnabled(currentPage > 1);
+    ui->btn_next->setEnabled(currentPage < totalPage);
+
+    // 调试：输出查询耗时
+    qDebug() << "查询耗时：" << timer.elapsed() << "ms，查询条数：" << row;
 }
 
 void Deal::on_btn_search_clicked()
 {
-    searchTickets();
+    currentPage = 1;
+    searchTickets(currentPage);
 }
-
 
 
 void Deal::onBookTicket()
@@ -260,7 +453,7 @@ void Deal::onBookTicket()
 
 void Deal::refreshTicketList()
 {
-    searchTickets();
+    searchTickets(currentPage);
 }
 
 void Deal::on_Single_Center_clicked()
@@ -283,14 +476,56 @@ void Deal::on_Deal_2_clicked()
         return;
     }
     m_personalCenterPage->refreshOrderList();
-    // 这里可以打开行程页面，暂时使用个人中心
-    // Single_Center *center = new Single_Center(currentUsername,this);
-    // center->setAttribute(Qt::WA_DeleteOnClose);
-    // center->show();
     ui->stackedWidget->setCurrentWidget(m_personalCenterPage);
 
 }
 void Deal::showTicketSearchPage()
 {
+    currentPage = 1;
+    searchTickets(currentPage);
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+}
+void Deal::onAddFavorite()
+{
+    if (currentUserID.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请先登录！");
+        return;
+    }
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn) return;
+    int ticketId = btn->property("ticketId").toInt();
+
+    QSqlQuery insertQuery;
+    insertQuery.prepare("INSERT INTO favorites (UserID, TicketID) VALUES (?, ?)");
+    insertQuery.addBindValue(currentUserID);
+    insertQuery.addBindValue(ticketId);
+
+    if (insertQuery.exec()) {
+        QMessageBox::information(this, "成功", "已添加到收藏夹！");
+        btn->setEnabled(false);
+        btn->setText("已收藏");
+    } else {
+        if (insertQuery.lastError().text().contains("Duplicate") ||
+            insertQuery.lastError().text().contains("UNIQUE")) {
+            QMessageBox::information(this, "提示", "您已经收藏过该行程了！");
+        } else {
+            QMessageBox::critical(this, "错误", "收藏失败：" + insertQuery.lastError().text());
+        }
+    }
+    insertQuery.finish();
+}
+
+void Deal::on_favorite_button_clicked()
+{
+    // 1. 检查是否登录
+    if (currentUserID.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请先登录！");
+        return;
+    }
+
+    // 2. 刷新收藏列表数据 (确保显示最新数据)
+    m_favoriteDialogPage->refreshFavoriteList();
+
+    // 3. 切换界面显示到收藏夹页面
+    ui->stackedWidget->setCurrentWidget(m_favoriteDialogPage);
 }

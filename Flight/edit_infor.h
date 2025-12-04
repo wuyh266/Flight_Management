@@ -2,7 +2,7 @@
 #define EDIT_INFOR_H
 
 #include <QDialog>
-
+#include <QPixmap>
 namespace Ui {
 class edit_infor;
 }
@@ -21,7 +21,6 @@ signals:
     void change_jianjie(QString &oldjianjie,QString &jianjie);
     void change_avatar(const QPixmap &pixmap);
 private slots:
-    void on_buttonBox_accepted();
     void on_pushButton_clicked();
 
 private:

@@ -23,7 +23,8 @@ private slots:
 private:
     void loadTicketInfo();
     void calculateTotal();
-
+    bool checkTimeConflict(const QString &passengerIDCard, int newTicketId);
+    QString getConflictDetails(const QString &passengerIDCard, int newTicketId);
     Ui::OrderDialog *ui;
     int ticketId;
     int userId;
@@ -31,4 +32,3 @@ private:
 };
 
 #endif // ORDER_DIALOG_H
-

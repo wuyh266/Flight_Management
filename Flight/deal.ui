@@ -389,13 +389,18 @@ QTableView QPushButton {
        <string>操作</string>
       </property>
      </column>
+     <column>
+      <property name="text">
+       <string>收藏</string>
+      </property>
+     </column>
     </widget>
     <widget class="QPushButton" name="home">
      <property name="geometry">
       <rect>
        <x>10</x>
        <y>620</y>
-       <width>331</width>
+       <width>195</width>
        <height>71</height>
       </rect>
      </property>
@@ -428,9 +433,9 @@ QPushButton:pressed {
     <widget class="QPushButton" name="Deal_2">
      <property name="geometry">
       <rect>
-       <x>340</x>
+       <x>204</x>
        <y>620</y>
-       <width>331</width>
+       <width>195</width>
        <height>71</height>
       </rect>
      </property>
@@ -463,9 +468,9 @@ QPushButton:pressed {
     <widget class="QPushButton" name="Single_Center">
      <property name="geometry">
       <rect>
-       <x>670</x>
+       <x>786</x>
        <y>620</y>
-       <width>321</width>
+       <width>204</width>
        <height>71</height>
       </rect>
      </property>
@@ -494,6 +499,148 @@ QPushButton:pressed {
      <property name="text">
       <string>个人中心</string>
      </property>
+    </widget>
+    <widget class="QPushButton" name="favorite_button">
+     <property name="geometry">
+      <rect>
+       <x>592</x>
+       <y>620</y>
+       <width>195</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    background-color: #606060;
+    border:1px solid white;
+    padding: 8px 16px;
+    color: white;
+    font-size: 14px;
+    box-shadow: inset 2px 2px 4px #484848, 
+                inset -2px -2px 4px #787878;
+	border-radius: 6px;
+}
+
+QPushButton:hover {
+    background-color: #646464;
+}
+
+QPushButton:pressed {
+    background-color: #5c5c5c;
+    box-shadow: inset 3px 3px 6px #404040, 
+                inset -3px -3px 6px #787878;
+}</string>
+     </property>
+     <property name="text">
+      <string>收藏</string>
+     </property>
+    </widget>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="geometry">
+      <rect>
+       <x>398</x>
+       <y>620</y>
+       <width>195</width>
+       <height>71</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QGroupBox {
+    background-color: #606060;
+    border:1px solid white;
+    padding: 8px 16px;
+    color: white;
+    font-size: 14px;
+    box-shadow: inset 2px 2px 4px #484848, 
+                inset -2px -2px 4px #787878;
+	border-radius: 6px;
+}</string>
+     </property>
+     <property name="title">
+      <string/>
+     </property>
+     <widget class="QPushButton" name="btn_next">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>28</y>
+        <width>15</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(255, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>15</width>
+        <height>15</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="btn_prev">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>28</y>
+        <width>15</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(255, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>15</width>
+        <height>15</height>
+       </size>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_pageInfo">
+      <property name="geometry">
+       <rect>
+        <x>41</x>
+        <y>26</y>
+        <width>121</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(255, 255, 255);</string>
+      </property>
+      <property name="text">
+       <string>第 1  页 / 共 50 页</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lineEdit_pageNum">
+      <property name="geometry">
+       <rect>
+        <x>60</x>
+        <y>26</y>
+        <width>25</width>
+        <height>20</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
+      <property name="inputMask">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>

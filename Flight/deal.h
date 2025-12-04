@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QString>
 #include "single_center.h"
+#include"favorite_dialog.h"
 namespace Ui {
 class Deal;
 }
@@ -20,26 +21,28 @@ public:
 private slots:
     void on_Single_Center_clicked();
     void on_btn_search_clicked();
+    void on_favorite_button_clicked();
    // void on_btn_reset_clicked();
     void on_Deal_2_clicked();
     void onBookTicket();
+    void onAddFavorite();
     void refreshTicketList();
     void showTicketSearchPage();
-    // void onPrevPage();  // 上一页
-    // void onNextPage();  //下一页
+    void on_lineEdit_pageNum_returnPressed();
+    void updatePageContainerText();
 private:
     void initTable();
-    void searchTickets();
-
+    void searchTickets(int pageNum);
+    int getTotalPage();
+    void initPagination();
     QString currentUserID;
+    QString currentPageText; // 缓存当前页码文本
+    int totalPageNum; // 缓存总页数
 
     Ui::Deal *ui;
     Single_Center *m_personalCenterPage;
     UserProfile *m_userProfilePage;
-
-    int currentPage = 1;    // 当前页码（默认第一页）
-    int pageSize = 20;      // 每页显示 20 条（可调整）
-    int totalCount = 0;     // 总数据条数（用于计算总页数）
+    favorite_dialog *m_favoriteDialogPage;
 };
 
 #endif // DEAL_H
