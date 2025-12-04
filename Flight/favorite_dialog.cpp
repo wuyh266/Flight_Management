@@ -171,7 +171,6 @@ void favorite_dialog::on_searchBtn_clicked()
     sql += " AND DATE(t.DepartureTime) >= :startDate";
     sql += " AND DATE(t.DepartureTime) <= :endDate";
     if (type != "全部") {
-        // 数据库存的是 Flight/Train/Bus，界面显示的是中文，需要转换
         if (type == "飞机") sql += " AND t.TicketType = 'Flight'";
         else if (type == "火车") sql += " AND t.TicketType = 'Train'";
         else if (type == "汽车") sql += " AND t.TicketType = 'Bus'";
