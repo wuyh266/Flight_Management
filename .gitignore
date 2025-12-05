@@ -11,6 +11,9 @@ release/
 # 临时文件
 *.o
 *.obj
+<<<<<<< HEAD
+*.exe
+=======
 *.exe
 # Qt 编译生成文件夹
 build/
@@ -38,3 +41,4 @@ moc_*.cpp
 Makefile*
 
 
+>>>>>>> e60a744b5de510d10c094176631bfe9fca952d18

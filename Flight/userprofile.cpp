@@ -24,6 +24,7 @@ UserProfile::UserProfile(const QString &userID, QWidget *parent)
     , ui(new Ui::UserProfile)
 {
     ui->setupUi(this);
+
     this->userID = userID;
     connect(ui->btn_back, &QPushButton::clicked, this, &UserProfile::on_btn_back_clicked);
     if (!this->userID.isEmpty()) {
@@ -52,6 +53,7 @@ void UserProfile::on_pushButton_8_clicked()
     s->show();
 }
 
+
 void UserProfile::on_pushButton_7_clicked()
 {
     QMessageBox msgBox(QMessageBox::Question, "取消登录", "确定要退出登录吗？",
@@ -78,6 +80,7 @@ void UserProfile::on_pushButton_7_clicked()
         emit logoutRequested();
     }
 }
+
 
 void UserProfile::on_pushButton_9_clicked()
 {
@@ -147,6 +150,7 @@ void UserProfile::on_pushButton_5_clicked()
     e->exec();
 }
 
+
 void UserProfile::getData(const QString &userID)
 {
     qDebug() << "getData called with userID:" << userID;
@@ -194,6 +198,7 @@ void UserProfile::on_btn_favorites_clicked()
 {
     emit myFavoritesRequested();
 }
+
 void UserProfile::on_btn_recharge_clicked(){
     if (payWindow == nullptr) {
         payWindow = new Pay();

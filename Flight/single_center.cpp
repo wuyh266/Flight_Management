@@ -109,6 +109,7 @@ void Single_Center::loadOrders()
 
         QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
         QString statusName = status == "Paid" ? "已支付" : (status == "Cancelled" ? "已取消" : "待支付");
+
         //判断订单是否过期，是否支付
         if (status == "Paid") {
             if (arrTime < QDateTime::currentDateTime()) {
@@ -141,17 +142,20 @@ void Single_Center::loadOrders()
             btnCancel->setProperty("orderId", orderId);
             connect(btnCancel, &QPushButton::clicked, this, &Single_Center::onCancelOrder);
             ui->tableWidget_orders->setCellWidget(row, 8, btnCancel);
+
         } else if(status == "Paid" && arrTime < QDateTime::currentDateTime()) {
             QPushButton *btndelete = new QPushButton("删除订单");
             btndelete->setProperty("orderId", orderId);
             connect(btndelete, &QPushButton::clicked, this, &Single_Center::onDeleteOrder);
             ui->tableWidget_orders->setCellWidget(row, 8, btndelete);
+
         } else {
             ui->tableWidget_orders->setItem(row, 8, new QTableWidgetItem("-"));
         }
 
         row++;
     }
+
     query.finish();
 }
 

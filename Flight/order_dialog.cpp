@@ -24,7 +24,6 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("填写订单信息");
     setModal(true);
-
     loadTicketInfo();
     loadUserBalance();
     ui->spinBox_count->setMinimum(1);
@@ -34,15 +33,15 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
 
 void OrderDialog::loadTicketInfo()
 {
-    QSqlDatabase db = QSqlDatabase::database();
-    if (!db.isOpen()) {
+    if (!QSqlDatabase::database().isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
         return;
     }
-    QSqlQuery query(db);
-    query.prepare("SELECT TicketType, TicketNo, DepartureCity, ArrivalCity, "
-                  "DepartureTime, ArrivalTime, Price, AvailableSeats, Company "
-                  "FROM tickets WHERE TicketID = ?");
+
+    QSqlQuery query;
+    query.prepare("SELECT flight_id, flight_number, departure_city, arrival_city, departure_time, "
+                  "arrival_time, price, departure_airport, arrival_airport, airline_company "
+                  "FROM flight_Info WHERE flight_id = ?");
     query.addBindValue(ticketId);
 
     if (!query.exec() || !query.next()) {
@@ -51,8 +50,11 @@ void OrderDialog::loadTicketInfo()
         return;
     }
 
-    QString ticketType = query.value(0).toString();
-    QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
+
+    //暂时保留此处类型，默认为航班
+    QString typeName ="航班";
+    // QString ticketType = query.value(0).toString();
+    // QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
 
     ui->label_type->setText(typeName);
     ui->label_ticketNo->setText(query.value(1).toString());
@@ -65,12 +67,16 @@ void OrderDialog::loadTicketInfo()
 
     ticketPrice = query.value(6).toDouble();
     ui->label_price->setText(QString::number(ticketPrice, 'f', 2) + " 元");
-    ui->label_available->setText(QString::number(query.value(7).toInt()) + " 张");
-    ui->label_company->setText(query.value(8).toString());
 
-    ui->spinBox_count->setMaximum(query.value(7).toInt());
+    //预留修改可用座位
+    ui->label_available->setText(QString::number(/*query.value(7).toInt()*/200) + " 张");
+    ui->label_company->setText(query.value(9).toString());
+
+    //预留修改可用座位
+    ui->spinBox_count->setMaximum(/*query.value(7).toInt()*/200);
     calculateTotal();
 }
+
 void OrderDialog::on_spinBox_count_valueChanged(int count)
 {
     Q_UNUSED(count);
@@ -90,6 +96,7 @@ void OrderDialog::calculateTotal()
         }
     }
 }
+
 //检测时间是否冲突
 bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketId){
     if(passengerIDCard.isEmpty()){
@@ -227,6 +234,7 @@ QString OrderDialog:: getConflictDetails(const QString &passengerIDCard, int new
 
     return "";
 }
+
 void OrderDialog::on_btn_confirm_clicked()
 {
     QString passengerName = ui->lineEdit_name->text().trimmed();
@@ -251,16 +259,19 @@ void OrderDialog::on_btn_confirm_clicked()
         QMessageBox::warning(this, "提示", "请输入联系电话！");
         return;
     }
+
     if (passengerID.length() != 18) {
         QMessageBox::warning(this, "提示", "请输入18位身份证号码！");
         ui->lineEdit_id->setFocus();
         ui->lineEdit_id->selectAll();
         return;
     }
+
     if (!QSqlDatabase::database().isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
         return;
     }
+
     //行程是否冲突
     if (checkTimeConflict(passengerID, ticketId)) {
         QString conflictDetails = getConflictDetails(passengerID, ticketId);
@@ -362,6 +373,7 @@ void OrderDialog::on_btn_confirm_clicked()
         QMessageBox::critical(this, "错误", "订票过程中发生错误！");
     }
 }
+
 void OrderDialog::on_btn_cancel_clicked()
 {
     reject();

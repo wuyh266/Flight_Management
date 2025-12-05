@@ -27,10 +27,16 @@ private slots:
     void onAddFavorite();
     void refreshTicketList();
     void showTicketSearchPage();
+    void on_lineEdit_pageNum_returnPressed();
+    void updatePageContainerText();
 private:
     void initTable();
-    void searchTickets();
+    void searchTickets(int pageNum);
+    int getTotalPage();
+    void initPagination();
     QString currentUserID;
+    QString currentPageText; // 缓存当前页码文本
+    int totalPageNum; // 缓存总页数
 
     Ui::Deal *ui;
     Single_Center *m_personalCenterPage;

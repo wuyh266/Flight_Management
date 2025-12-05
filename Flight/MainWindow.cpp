@@ -55,6 +55,7 @@ bool checkUserI(QString &ID,QString &password){
         qDebug() << "请先连接数据库！";
         return false;
     }
+
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery query(db);
     QString sql="SELECT IDCard, PWord FROM users where IDCard=? AND PWord=?";
@@ -74,16 +75,19 @@ QString GetUserID(QString &input,QString &password){
         qDebug() << "请先连接数据库！";
         return QString();
     }
+
     QSqlDatabase db = QSqlDatabase::database();
     if (!db.isOpen()) {
         qDebug() << "请先连接数据库！";
         return QString();
     }
     QSqlQuery query(db);  // 显式指定数据库连接
+
     query.prepare("SELECT UserID FROM users where Username=? AND PWord=?");
     query.addBindValue(input);
     query.addBindValue(password);
     if(query.exec()&&query.next()){
+
         QString uid = query.value(0).toString();
         query.finish();
         return uid;
@@ -128,4 +132,3 @@ void MainWindow::on_sign_in_clicked()
     s->setAttribute(Qt::WA_DeleteOnClose);
     s->show();
 }
-

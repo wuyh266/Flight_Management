@@ -34,5 +34,3 @@ private:
 };
 
 #endif // ORDER_DIALOG_H
-
-
