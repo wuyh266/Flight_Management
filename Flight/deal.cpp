@@ -128,10 +128,7 @@ int Deal::getTotalPage()
 {
     QString from = ui->lineEdit_from->text().trimmed();
     QString to = ui->lineEdit_to->text().trimmed();
-    QDate date = ui->dateEdit->date();
-    QString startTime = date.toString("yyyy-MM-dd 00:00:00");
-
-    QString type = ui->comboBox_type->currentText();
+    QString startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
 
     if (!QSqlDatabase::database().isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
@@ -241,6 +238,7 @@ void Deal::updatePageContainerText()
 
     // 有数据时：拼接“第 [输入框] 页 / 共 X 页”
     QString pageText = QString("第        页 / 共 %1 页").arg(totalPage);
+    if(totalPage<10) ui->lineEdit_pageNum->setGeometry(63,26,25,20);
     ui->label_pageInfo->setText(pageText);
     ui->lineEdit_pageNum->setEnabled(true);
     ui->lineEdit_pageNum->setText(QString::number(currentPage));
@@ -311,19 +309,8 @@ void Deal::searchTickets(int pageNum)
         return;
     }
 
-    if (pageNum < 1) {
-        pageNum = 1;
-        currentPage = 1;
-        QMessageBox::information(this, "提示", "都说了要向前了~");
-    } else if (pageNum > totalPage) {
-        pageNum = totalPage;
-        currentPage = totalPage;
-        QMessageBox::information(this, "提示", QString("已经到底了~"));
-    }
-
     QString from = ui->lineEdit_from->text().trimmed();
     QString to = ui->lineEdit_to->text().trimmed();
-    QDate date = ui->dateEdit->date();
 
 
     // 检查数据库连接
@@ -339,13 +326,13 @@ void Deal::searchTickets(int pageNum)
         }
     }
 
-    QString startTime = date.toString("yyyy-MM-dd 00:00:00");
+    QString startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
 
-    QString sql = "SELECT flight_id, flight_number, departure_city, arrival_city, departure_time, arrival_time, "  // 简化：查询所有字段，无需手动列写
-                  "price, departure_airport, arrival_airport, airline_company "
+    QString sql = "SELECT flight_id, flight_number, departure_city, arrival_city, departure_time, arrival_time, "
+                  "price, departure_airport, arrival_airport, airline_company, availableSeat "
                   "FROM flight_info WHERE status = 'On Time' "
-                  "AND departure_time >= :start_time ";
-                  /*"AND AvailableSeats > 0 "*/
+                  "AND departure_time >= :start_time "
+                  "AND availableSeat > 0 ";
 
     // 动态添加条件（保持不变，但确保空格正确）
     if (!from.isEmpty()) {
@@ -396,7 +383,6 @@ void Deal::searchTickets(int pageNum)
         ui->tableWidget_tickets->insertRow(row);
 
         int ticketId = query.value("flight_id").toInt();
-        QString testSeatNumber="200";
 
 
         // 设置表格数据（列索引与表头对应）
@@ -414,7 +400,7 @@ void Deal::searchTickets(int pageNum)
         ui->tableWidget_tickets->setItem(row, 5, new QTableWidgetItem(QString::number(query.value(6).toDouble(), 'f', 2)));
 
         // 可用座位数
-        ui->tableWidget_tickets->setItem(row, 6, new QTableWidgetItem(/*query.value(9).toString()*/testSeatNumber));
+        ui->tableWidget_tickets->setItem(row, 6, new QTableWidgetItem(query.value(10).toString()));
         // 公司名称
         ui->tableWidget_tickets->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
 

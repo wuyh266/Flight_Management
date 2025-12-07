@@ -40,7 +40,7 @@ void OrderDialog::loadTicketInfo()
 
     QSqlQuery query;
     query.prepare("SELECT flight_id, flight_number, departure_city, arrival_city, departure_time, "
-                  "arrival_time, price, departure_airport, arrival_airport, airline_company "
+                  "arrival_time, price, departure_airport, arrival_airport, airline_company, availableSeat "
                   "FROM flight_Info WHERE flight_id = ?");
     query.addBindValue(ticketId);
 
@@ -58,7 +58,7 @@ void OrderDialog::loadTicketInfo()
 
     ui->label_type->setText(typeName);
     ui->label_ticketNo->setText(query.value(1).toString());
-    ui->label_route->setText(query.value(2).toString() + " → " + query.value(3).toString());
+    ui->label_route->setText(query.value(2).toString() + query.value(7).toString() + " → " + query.value(3).toString() + query.value(8).toString());
 
     QDateTime depTime = query.value(4).toDateTime();
     QDateTime arrTime = query.value(5).toDateTime();
@@ -68,12 +68,10 @@ void OrderDialog::loadTicketInfo()
     ticketPrice = query.value(6).toDouble();
     ui->label_price->setText(QString::number(ticketPrice, 'f', 2) + " 元");
 
-    //预留修改可用座位
-    ui->label_available->setText(QString::number(/*query.value(7).toInt()*/200) + " 张");
+    ui->label_available->setText(QString::number(query.value(10).toInt()) + " 张");
     ui->label_company->setText(query.value(9).toString());
 
-    //预留修改可用座位
-    ui->spinBox_count->setMaximum(/*query.value(7).toInt()*/200);
+    ui->spinBox_count->setMaximum(query.value(10).toInt());
     calculateTotal();
 }
 
@@ -103,7 +101,7 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
         return false;
     }
     QSqlQuery newTicketQuery;
-    newTicketQuery.prepare("SELECT DepartureTime, ArrivalTime FROM tickets WHERE TicketID = ?");
+    newTicketQuery.prepare("SELECT departure_time, arrival_time FROM flight_info WHERE flight_id = ?");
     newTicketQuery.addBindValue(newTicketId);
     if (!newTicketQuery.exec() || !newTicketQuery.next()) {
         qDebug() << "无法获取新票务信息";
@@ -113,11 +111,11 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
     QDateTime newArrTime = newTicketQuery.value(1).toDateTime();
     //获取这个乘客未出行的订单
     QSqlQuery query;
-    query.prepare("SELECT t.DepartureTime, t.ArrivalTime, t.TicketNo, t.DepartureCity, t.ArrivalCity, t.TicketType "
+    query.prepare("SELECT t.departure_time, t.arrival_time, t.flight_number "
                   "FROM orders o "
-                  "JOIN tickets t ON o.TicketID = t.TicketID "
+                  "JOIN flight_info t ON o.TicketID = t.flight_id "
                   "WHERE o.PassengerIDCard = ? AND o.OrderStatus IN ('Pending', 'Confirmed', 'Paid') "
-                  "AND t.DepartureTime > ?");
+                  "AND t.departure_time > ?");
     query.addBindValue(passengerIDCard);
     query.addBindValue(QDateTime::currentDateTime());
     if (!query.exec()) {
@@ -128,9 +126,6 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
         QDateTime existingDepTime = query.value(0).toDateTime();
         QDateTime existingArrTime = query.value(1).toDateTime();
         QString ticketNo = query.value(2).toString();
-        QString depCity = query.value(3).toString();
-        QString arrCity = query.value(4).toString();
-        QString ticketType = query.value(5).toString();
 
         // 时间冲突判断逻辑
         bool timeOverlap = (newDepTime < existingArrTime && newArrTime > existingDepTime);
@@ -174,7 +169,7 @@ QString OrderDialog:: getConflictDetails(const QString &passengerIDCard, int new
 
     // 获取新票信息
     QSqlQuery newTicketQuery;
-    newTicketQuery.prepare("SELECT DepartureTime, ArrivalTime FROM tickets WHERE TicketID = ?");
+    newTicketQuery.prepare("SELECT departure_time, arrival_time FROM flight_info WHERE flight_id = ?");
     newTicketQuery.addBindValue(newTicketId);
 
     if (!newTicketQuery.exec() || !newTicketQuery.next()) {
@@ -186,12 +181,12 @@ QString OrderDialog:: getConflictDetails(const QString &passengerIDCard, int new
 
     // 查找冲突的行程
     QSqlQuery query;
-    query.prepare("SELECT t.TicketNo, t.DepartureCity, t.ArrivalCity, "
-                  "t.DepartureTime, t.ArrivalTime, t.TicketType, t.Company "
+    query.prepare("SELECT t.flight_number, t.departure_city, t.arrival_city, t.departure_airport, t.arrival_airport, "
+                  "t.departure_time, t.arrival_time, t.airline_company "
                   "FROM orders o "
-                  "JOIN tickets t ON o.TicketID = t.TicketID "
+                  "JOIN flight_info t ON o.TicketID = t.flight_id "
                   "WHERE o.PassengerIDCard = ? AND o.OrderStatus IN ('Pending', 'Confirmed', 'Paid') "
-                  "AND t.DepartureTime > ?");
+                  "AND t.departure_time > ?");
 
     query.addBindValue(passengerIDCard);
     query.addBindValue(QDateTime::currentDateTime());
@@ -201,8 +196,8 @@ QString OrderDialog:: getConflictDetails(const QString &passengerIDCard, int new
     }
 
     while (query.next()) {
-        QDateTime existingDepTime = query.value(3).toDateTime();
-        QDateTime existingArrTime = query.value(4).toDateTime();
+        QDateTime existingDepTime = query.value(5).toDateTime();
+        QDateTime existingArrTime = query.value(6).toDateTime();
 
         // 检查时间冲突
         bool timeOverlap = (newDepTime < existingArrTime && newArrTime > existingDepTime);
@@ -218,17 +213,19 @@ QString OrderDialog:: getConflictDetails(const QString &passengerIDCard, int new
         }
 
         if (timeOverlap || insufficientTransfer) {
-            QString ticketType = query.value(5).toString();
+            QString ticketType = "Flight";
             QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
 
-            return QString("%1 %2\n%3 → %4\n%5 - %6\n运营商：%7")
+            return QString("%1 %2\n%3%4 → %5%6\n%7 - %8\n运营商：%9")
                 .arg(typeName)
                 .arg(query.value(0).toString())
                 .arg(query.value(1).toString())
+                .arg(query.value(3).toString())
                 .arg(query.value(2).toString())
+                .arg(query.value(4).toString())
                 .arg(existingDepTime.toString("MM-dd hh:mm"))
                 .arg(existingArrTime.toString("MM-dd hh:mm"))
-                .arg(query.value(6).toString());
+                .arg(query.value(7).toString());
         }
     }
 
@@ -284,17 +281,19 @@ void OrderDialog::on_btn_confirm_clicked()
 
         // 获取当前票务信息
         QSqlQuery ticketQuery;
-        ticketQuery.prepare("SELECT TicketNo, DepartureCity, ArrivalCity, DepartureTime, ArrivalTime FROM tickets WHERE TicketID = ?");
+        ticketQuery.prepare("SELECT flight_number, departure_city, departure_airport, arrival_city, arrival_airport, departure_time, arrival_time FROM flight_info WHERE flight_id = ?");
         ticketQuery.addBindValue(ticketId);
 
         if (ticketQuery.exec() && ticketQuery.next()) {
-            message += QString("您要预订的行程：\n%1 %2\n%3 → %4\n%5 - %6")
-                           .arg(ui->label_type->text())
+            message += QString("您要预订的行程：\n%1 %2\n%3%4 → %5%6\n%7 - %8")
+                           .arg("航班")
                            .arg(ticketQuery.value(0).toString())
                            .arg(ticketQuery.value(1).toString())
                            .arg(ticketQuery.value(2).toString())
-                           .arg(ticketQuery.value(3).toDateTime().toString("MM-dd hh:mm"))
-                           .arg(ticketQuery.value(4).toDateTime().toString("MM-dd hh:mm"));
+                           .arg(ticketQuery.value(3).toString())
+                           .arg(ticketQuery.value(4).toString())
+                           .arg(ticketQuery.value(5).toDateTime().toString("MM-dd hh:mm"))
+                           .arg(ticketQuery.value(6).toDateTime().toString("MM-dd hh:mm"));
         }
 
         QMessageBox::warning(this, "行程冲突", message);
@@ -304,15 +303,15 @@ void OrderDialog::on_btn_confirm_clicked()
     // 检查可用座位数
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery checkQuery(db);
-    checkQuery.prepare("SELECT AvailableSeats FROM tickets WHERE TicketID = ?");
+    checkQuery.prepare("SELECT availableSeat FROM flight_info WHERE flight_id = ?");
     checkQuery.addBindValue(ticketId);
     if (!checkQuery.exec() || !checkQuery.next()) {
         QMessageBox::warning(this, "错误", "检查座位失败！");
         return;
     }
-    int availableSeats = checkQuery.value(0).toInt();
-    if (availableSeats < count) {
-        QMessageBox::warning(this, "提示", QString("可用座位不足！当前可用：%1 张").arg(availableSeats));
+    int availableSeat = checkQuery.value(0).toInt();
+    if (availableSeat < count) {
+        QMessageBox::warning(this, "提示", QString("可用座位不足！当前可用：%1 张").arg(availableSeat));
         return;
     }
 
@@ -346,7 +345,7 @@ void OrderDialog::on_btn_confirm_clicked()
 
         // 更新票务可用座位数
         QSqlQuery updateQuery(db);
-        updateQuery.prepare("UPDATE tickets SET AvailableSeats = AvailableSeats - ? WHERE TicketID = ?");
+        updateQuery.prepare("UPDATE flight_info SET availableSeat = availableSeat - ? WHERE flight_id = ?");
         updateQuery.addBindValue(count);
         updateQuery.addBindValue(ticketId);
 
