@@ -35,8 +35,6 @@ private:
     int getTotalPage();
     void initPagination();
     QString currentUserID;
-    QString currentPageText; // 缓存当前页码文本
-    int totalPageNum; // 缓存总页数
 
     Ui::Deal *ui;
     Single_Center *m_personalCenterPage;

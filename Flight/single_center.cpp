@@ -43,10 +43,18 @@ void Single_Center::initTable()
 {
     ui->tableWidget_orders->setColumnCount(9);
     QStringList headers;
-    headers << "订单号" << "票务类型" << "路线" << "出发时间" << "到达时间"
-            << "数量" << "总价(元)" << "状态" << "操作"<<"收藏";
+    headers << "订单号" << "航班号" << "路线" << "出发时间" << "到达时间"
+            << "数量" << "总价(元)" << "状态" << "操作"<< "收藏";
+    ui->tableWidget_orders->setColumnCount(headers.size());
     ui->tableWidget_orders->setHorizontalHeaderLabels(headers);
-    ui->tableWidget_orders->horizontalHeader()->setStretchLastSection(true);
+    ui->tableWidget_orders->horizontalHeader()->setStretchLastSection(QHeaderView::Stretch);
+    ui->tableWidget_orders->setColumnWidth(1, 75);   //航班号
+    ui->tableWidget_orders->setColumnWidth(2, 225);  //路线
+    ui->tableWidget_orders->setColumnWidth(3, 125);  // 出发时间
+    ui->tableWidget_orders->setColumnWidth(4, 125);  // 到达时间
+    ui->tableWidget_orders->setColumnWidth(5, 50);   // 票数
+    ui->tableWidget_orders->setColumnWidth(7, 75);   //状态
+
     ui->tableWidget_orders->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_orders->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_orders->verticalHeader()->setVisible(false);
@@ -80,10 +88,10 @@ void Single_Center::loadOrders()
     }
     QSqlQuery query(db);  // 显式指定数据库连接
     query.prepare("SELECT o.OrderID, o.OrderNo, o.OrderStatus, o.TicketCount, o.TotalPrice, "
-                  "o.OrderTime, t.TicketType, t.DepartureCity, t.ArrivalCity, "
-                  "t.DepartureTime, t.ArrivalTime "
+                  "o.OrderTime, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
+                  "t.departure_time, t.arrival_time, t.flight_number "
                   "FROM orders o "
-                  "JOIN tickets t ON o.TicketID = t.TicketID "
+                  "JOIN flight_info t ON o.TicketID = t.flight_id "
                   "WHERE o.UserID = ? "
                   "ORDER BY o.OrderTime DESC");
     query.addBindValue(userId);
@@ -102,12 +110,11 @@ void Single_Center::loadOrders()
         QString status = query.value(2).toString();
         int count = query.value(3).toInt();
         double totalPrice = query.value(4).toDouble();
-        QString ticketType = query.value(6).toString();
-        QString route = query.value(7).toString() + " → " + query.value(8).toString();
-        QDateTime depTime = query.value(9).toDateTime();
-        QDateTime arrTime = query.value(10).toDateTime();
+        QString route = query.value(6).toString() + query.value(7).toString() + " → " + query.value(8).toString() + query.value(9).toString();
+        QDateTime depTime = query.value(10).toDateTime();
+        QDateTime arrTime = query.value(11).toDateTime();
 
-        QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
+        QString typeName = query.value(12).toString();
         QString statusName = status == "Paid" ? "已支付" : (status == "Cancelled" ? "已取消" : "待支付");
 
         //判断订单是否过期，是否支付
@@ -213,7 +220,7 @@ void Single_Center::onCancelOrder()
 
         // 恢复座位数
         QSqlQuery updateTicketQuery(db);
-        updateTicketQuery.prepare("UPDATE tickets SET AvailableSeats = AvailableSeats + ? WHERE TicketID = ?");
+        updateTicketQuery.prepare("UPDATE flight_info SET availableSeat = availableSeat + ? WHERE flight_id = ?");
         updateTicketQuery.addBindValue(ticketCount);
         updateTicketQuery.addBindValue(ticketId);
         if (!updateTicketQuery.exec()) {

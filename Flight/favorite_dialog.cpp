@@ -36,7 +36,7 @@ void favorite_dialog::initTable()
 {
     QStringList headers;
     headers << "类型" << "编号" << "出发地" << "目的地"
-            << "出发时间" << "到达时间" << "价格（元）" << "公司" <<"收藏";
+            << "出发时间" << "到达时间" << "价格（元）" << "公司" << "收藏";
     ui->tableWidget_favorites->setHorizontalHeaderLabels(headers);
     ui->tableWidget_favorites->setColumnCount(headers.size());
     ui->tableWidget_favorites->horizontalHeader()->setStretchLastSection(true);
@@ -57,14 +57,12 @@ void favorite_dialog::loadFavorites()
 
     // 查询收藏夹内容
     QSqlQuery query;
-    QString sql = "SELECT t.TicketID, t.TicketType, t.TicketNo, t.DepartureCity, t.ArrivalCity, "
-                  "t.DepartureTime, t.ArrivalTime, t.Price, t.Company "
-                  "FROM favorites f JOIN tickets t ON f.TicketID = t.TicketID "
-                  "WHERE f.UserID = :userId";
-    sql += " ORDER BY t.DepartureTime DESC";
-
-    query.prepare(sql);
-    query.bindValue(":userId", currentUserID);
+    query.prepare("SELECT t.flight_id, t.flight_number, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
+                  "t.departure_time, t.arrival_time, t.price, t.airline_company "
+                  "FROM favorites f JOIN flight_info t ON f.TicketID = t.flight_id "
+                  "WHERE f.UserID = userID "
+                  "ORDER BY t.departure_time DESC");
+    query.bindValue(":userId", currentUserID.toInt());
 
     if (!query.exec()) {
         QMessageBox::critical(this, "错误", "查询收藏列表失败：" + query.lastError().text());
@@ -76,19 +74,18 @@ void favorite_dialog::loadFavorites()
         ui->tableWidget_favorites->insertRow(row);
 
         int ticketId = query.value(0).toInt();
-        QString ticketType = query.value(1).toString();
-        QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
+        QString typeName = "航班";
 
         ui->tableWidget_favorites->setItem(row, 0, new QTableWidgetItem(typeName));
-        ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(2).toString()));
-        ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(3).toString()));
-        ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()));
-        QDateTime depTime = query.value(5).toDateTime();
+        ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(1).toString()));
+        ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(2).toString()+query.value(3).toString()));
+        ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()+query.value(5).toString()));
+        QDateTime depTime = query.value(6).toDateTime();
         ui->tableWidget_favorites->setItem(row, 4, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
-        QDateTime arrTime = query.value(6).toDateTime();
+        QDateTime arrTime = query.value(7).toDateTime();
         ui->tableWidget_favorites->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
-        ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(7).toDouble(), 'f', 2)));
-        ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(8).toString()));
+        ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(8).toDouble(), 'f', 2)));
+        ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
 
         // 添加移除按钮
         QPushButton *btnRemove = new QPushButton("移除");
@@ -130,7 +127,7 @@ void favorite_dialog::onRemoveFavorite()
 
     QSqlQuery removeQuery;
     removeQuery.prepare("DELETE FROM favorites WHERE UserID = :userId AND TicketID = :ticketId");
-    removeQuery.bindValue(":userId", currentUserID);
+    removeQuery.bindValue(":userId", currentUserID.toInt());
 
     removeQuery.bindValue(":ticketId", ticketId);
 
@@ -156,30 +153,25 @@ void favorite_dialog::on_searchBtn_clicked()
     QDate endDate = ui->dateEdit_end->date();                 // 结束日期
     QString type = ui->comboBox_type->currentText();          // 交通类型
 
-    QString sql = "SELECT t.TicketID, t.TicketType, t.TicketNo, t.DepartureCity, t.ArrivalCity, "
-                  "t.DepartureTime, t.ArrivalTime, t.Price, t.Company "
-                  "FROM favorites f JOIN tickets t ON f.TicketID = t.TicketID "
-                  "WHERE f.UserID = :userId";
+    QString sql = "SELECT t.flight_id, t.flight_number, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
+                  "t.departure_time, t.arrival_time, t.price, t.airline_company "
+                  "FROM favorites f JOIN flight_info t ON f.TicketID = t.flight_id "
+                  "WHERE f.UserID = userId";
 
     if (!depCity.isEmpty()) {
-        sql += " AND t.DepartureCity LIKE :depCity";
+        sql += " AND t.departure_city LIKE :depCity";
     }
     if (!arrCity.isEmpty()) {
-        sql += " AND t.ArrivalCity LIKE :arrCity";
+        sql += " AND t.arrival_city LIKE :arrCity";
     }
 
-    sql += " AND DATE(t.DepartureTime) >= :startDate";
-    sql += " AND DATE(t.DepartureTime) <= :endDate";
-    if (type != "全部") {
-        if (type == "飞机") sql += " AND t.TicketType = 'Flight'";
-        else if (type == "火车") sql += " AND t.TicketType = 'Train'";
-        else if (type == "汽车") sql += " AND t.TicketType = 'Bus'";
-    }
+    sql += " AND DATE(t.departure_time) >= :startDate";
+    sql += " AND DATE(t.departure_time) <= :endDate";
 
-    sql += " ORDER BY t.DepartureTime DESC"; // 排序
+    sql += " ORDER BY t.departure_time DESC"; // 排序
     QSqlQuery query;
     query.prepare(sql);
-    query.bindValue(":userId", currentUserID);
+    query.bindValue(":userId", currentUserID.toInt());
     query.bindValue(":startDate", startDate);
     query.bindValue(":endDate", endDate);
 
@@ -203,20 +195,19 @@ void favorite_dialog::on_searchBtn_clicked()
 
         int ticketId = query.value(0).toInt();
 
-        QString ticketType = query.value(1).toString();
-        QString typeName = ticketType == "Flight" ? "航班" : (ticketType == "Train" ? "火车" : "汽车");
+        QString typeName = "航班";
 
         ui->tableWidget_favorites->setItem(row, 0, new QTableWidgetItem(typeName));
 
-        ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(2).toString()));
-        ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(3).toString()));
-        ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()));
-        QDateTime depTime = query.value(5).toDateTime();
+        ui->tableWidget_favorites->setItem(row, 1, new QTableWidgetItem(query.value(1).toString()));
+        ui->tableWidget_favorites->setItem(row, 2, new QTableWidgetItem(query.value(2).toString()+query.value(3).toString()));
+        ui->tableWidget_favorites->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()+query.value(5).toString()));
+        QDateTime depTime = query.value(6).toDateTime();
         ui->tableWidget_favorites->setItem(row, 4, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
-        QDateTime arrTime = query.value(6).toDateTime();
+        QDateTime arrTime = query.value(7).toDateTime();
         ui->tableWidget_favorites->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
-        ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(7).toDouble(), 'f', 2)));
-        ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(8).toString()));
+        ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(8).toDouble(), 'f', 2)));
+        ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
 
         QPushButton *btnRemove = new QPushButton("移除");
         btnRemove->setProperty("ticketId", ticketId);

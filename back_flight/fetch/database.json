@@ -1,7 +1,7 @@
 {
     "hostname": "127.0.0.1",
     "port": 3306,
-    "database": "FlightDB",
+    "database": "Flight",
     "username": "root",
-    "password": "@WUyh0601"
+    "password": "a157621438"
 }

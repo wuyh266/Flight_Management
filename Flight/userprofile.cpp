@@ -42,19 +42,19 @@ void UserProfile::on_btn_back_clicked()
     emit backRequested();
 }
 
-void UserProfile::on_pushButton_4_clicked()
+void UserProfile::on_pushButton_4_clicked() // 我的订单
 {
     emit myOrdersRequested();
 }
 
-void UserProfile::on_pushButton_8_clicked()
+void UserProfile::on_pushButton_8_clicked() // 注册
 {
     Sign_in *s = new Sign_in();
     s->show();
 }
 
 
-void UserProfile::on_pushButton_7_clicked()
+void UserProfile::on_pushButton_7_clicked() // 登录
 {
     QMessageBox msgBox(QMessageBox::Question, "取消登录", "确定要退出登录吗？",
                        QMessageBox::Yes | QMessageBox::No, this);
@@ -82,7 +82,7 @@ void UserProfile::on_pushButton_7_clicked()
 }
 
 
-void UserProfile::on_pushButton_9_clicked()
+void UserProfile::on_pushButton_9_clicked() // 注销
 {
     QMessageBox msgBox(QMessageBox::Question, "注销", "确定要注销吗？",
                        QMessageBox::Yes | QMessageBox::No, this);

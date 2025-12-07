@@ -36,6 +36,7 @@ CREATE TABLE `flight_info` (
   `checkin_start_time` datetime NOT NULL,
   `checkin_end_time` datetime NOT NULL,
   `status` varchar(10) NOT NULL,
+  `availableSeat` int DEFAULT 0,
   PRIMARY KEY (`flight_id`),
   UNIQUE KEY `flight_number` (`flight_number`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2420 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

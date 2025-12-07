@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"time"
 
 	_ "github.com/alexbrainman/odbc"
 )
@@ -27,7 +28,7 @@ func loadDatabaseConfig(filename string) (*DatabaseConfig, error) {
 	return &config, nil
 }
 func connectDatabase(config *DatabaseConfig) (*sql.DB, error) {
-	dsn := fmt.Sprintf("DRIVER={MySQL ODBC 9.5 Unicode Driver};SERVER=%s;PORT=%d;DATABASE=%s;UID=%s;PWD=%s;CHARSET=utf8mb4",
+	dsn := fmt.Sprintf("DRIVER={MySQL ODBC 8.0 Unicode Driver};SERVER=%s;PORT=%d;DATABASE=%s;UID=%s;PWD=%s;CHARSET=utf8",
 		config.Hostname,
 		config.Port,
 		config.Database,
@@ -38,6 +39,11 @@ func connectDatabase(config *DatabaseConfig) (*sql.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("打开数据库连接失败")
 	}
+
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(30 * time.Minute)
+
 	err = db.Ping()
 	if err != nil {
 		return nil, fmt.Errorf("数据库连接测试失败")
@@ -59,6 +65,7 @@ func createTable(db *sql.DB) error {
         checkin_start_time DATETIME NOT NULL,
         checkin_end_time DATETIME NOT NULL,
         status VARCHAR(10) NOT NULL,
+        availableSeat INT DEFAULT 0, -- 可用座位数
         UNIQUE(flight_number)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
 
@@ -88,8 +95,21 @@ func saveFlightsToDatabase(db *sql.DB, flights []Flight) error {
 	sql := `INSERT INTO flight_info 
         (flight_number, departure_city, arrival_city, departure_time, arrival_time,
          price, departure_airport, arrival_airport, airline_company,
-         checkin_start_time, checkin_end_time, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         checkin_start_time, checkin_end_time, status, availableSeat)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+	// 使用事务批量插入，提升性能
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("开启事务失败: %v", err)
+	}
+
+	stmt, err := tx.Prepare(sql)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("预处理SQL失败: %v", err)
+	}
+	defer stmt.Close()
 
 	successCount := 0
 	failCount := 0
@@ -108,6 +128,7 @@ func saveFlightsToDatabase(db *sql.DB, flights []Flight) error {
 			flight.CheckinStartTime,
 			flight.CheckinEndTime,
 			flight.Status,
+			flight.AvailableSeat,
 		)
 		if err != nil {
 			failCount++
@@ -117,6 +138,12 @@ func saveFlightsToDatabase(db *sql.DB, flights []Flight) error {
 			continue
 		}
 		successCount++
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("提交事务失败: %v", err)
 	}
 
 	fmt.Printf("数据库保存完成: 成功 %d 条, 失败 %d 条\n", successCount, failCount)
