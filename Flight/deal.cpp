@@ -110,13 +110,13 @@ void Deal::initTable()
             << "到达时间" << "价格(元)" << "可用座位" << "公司" << "操作" << "收藏";
     ui->tableWidget_tickets->setColumnCount(headers.size());
     ui->tableWidget_tickets->setHorizontalHeaderLabels(headers);
-    // ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     // 关键列手动调整宽度（避免文字截断）
-    ui->tableWidget_tickets->setColumnWidth(2, 135);
+    ui->tableWidget_tickets->setColumnWidth(1, 135);  //出发地
+    ui->tableWidget_tickets->setColumnWidth(2, 135);  //目的地
     ui->tableWidget_tickets->setColumnWidth(3, 125);  // 出发时间
     ui->tableWidget_tickets->setColumnWidth(4, 125);  // 到达时间
     ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
-    ui->tableWidget_tickets->setColumnWidth(6, 90);
+    ui->tableWidget_tickets->setColumnWidth(6, 90);   //可用座位
     ui->tableWidget_tickets->setColumnWidth(8, 60);   // 操作列
     ui->tableWidget_tickets->setColumnWidth(9, 60);   //收藏
 
@@ -206,6 +206,17 @@ void Deal::initPagination()
     QIntValidator *validator = new QIntValidator(1, 999, this);
     ui->lineEdit_pageNum->setValidator(validator);
     ui->lineEdit_pageNum->setAlignment(Qt::AlignCenter);
+
+    ui->label->setPixmap(QPixmap(":/img/LeftArrow.png"));
+    ui->label->setAlignment(Qt::AlignCenter);
+    ui->label->raise();
+    ui->label->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+    ui->label_2->setPixmap(QPixmap(":/img/rightArrow.png"));
+    ui->label_2->setAlignment(Qt::AlignCenter);
+    ui->label_2->raise();
+    ui->label_2->setAttribute(Qt::WA_TransparentForMouseEvents);
+
     // 上一页按钮
     connect(ui->btn_prev, &QPushButton::clicked, this, [=](){
         if (currentPage > 1) {
@@ -213,6 +224,7 @@ void Deal::initPagination()
             searchTickets(currentPage);
             updatePageContainerText();
             ui->btn_prev->setEnabled(currentPage > 1);
+            ui->label->setStyleSheet("opacity: 1.0;");
         }
     });
 
@@ -222,12 +234,18 @@ void Deal::initPagination()
         searchTickets(currentPage);
         updatePageContainerText();
         ui->btn_next->setEnabled(currentPage < totalPage);
+        ui->label_2->setStyleSheet("opacity: 1.0;");
     });
 
     connect(ui->lineEdit_pageNum, &QLineEdit::returnPressed, this, &Deal::on_lineEdit_pageNum_returnPressed);
 
     // 初始化分页文本
     updatePageContainerText();
+
+    bool prevEnabled = ui->btn_prev->isEnabled();
+    ui->label->setStyleSheet(QString("opacity: %1;").arg(prevEnabled ? 1.0 : 0.5));
+    bool nextEnabled = ui->btn_next->isEnabled();
+    ui->label_2->setStyleSheet(QString("opacity: %1;").arg(nextEnabled ? 1.0 : 0.5));
 }
 
 void Deal::updatePageContainerText()
@@ -247,8 +265,15 @@ void Deal::updatePageContainerText()
     ui->lineEdit_pageNum->setEnabled(true);
     ui->lineEdit_pageNum->setText(QString::number(currentPage));
 
+    ui->btn_prev->setEnabled(currentPage > 1);
+    ui->btn_next->setEnabled(currentPage < totalPage);
+    // 同步 Label 透明度
+    if (ui->label) ui->label->setStyleSheet(QString("opacity: %1;").arg(currentPage > 1 ? 1.0 : 0.5));
+    if (ui->label_2) ui->label_2->setStyleSheet(QString("opacity: %1;").arg(currentPage < totalPage ? 1.0 : 0.5));
     // 确保输入框在标签上层
     ui->lineEdit_pageNum->raise();
+    if (ui->label) ui->label->raise();
+    if (ui->label_2) ui->label_2->raise();
 }
 
 void Deal::on_lineEdit_pageNum_returnPressed()
@@ -292,6 +317,11 @@ void Deal::on_lineEdit_pageNum_returnPressed()
     // 更新按钮状态
     ui->btn_prev->setEnabled(currentPage > 1);
     ui->btn_next->setEnabled(currentPage < totalPage);
+
+    bool prevEnabled = ui->btn_prev->isEnabled();
+    ui->label->setStyleSheet(QString("opacity: %1;").arg(prevEnabled ? 1.0 : 0.5));
+    bool nextEnabled = ui->btn_next->isEnabled();
+    ui->label_2->setStyleSheet(QString("opacity: %1;").arg(nextEnabled ? 1.0 : 0.5));
 }
 
 void Deal::searchTickets(int pageNum)
@@ -445,7 +475,6 @@ void Deal::searchTickets(int pageNum)
     //调整表格列宽，优化显示
     ui->tableWidget_tickets->setUpdatesEnabled(true);
     ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
 
     updatePageContainerText();
     // 更新分页按钮状态（核心：禁用/启用上一页/下一页）

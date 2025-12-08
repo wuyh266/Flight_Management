@@ -569,7 +569,14 @@ QPushButton:pressed {
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">color: rgb(255, 255, 255);</string>
+       <string notr="true"> QPushButton {
+            background-color: transparent;
+            border: none;
+            outline: none;
+        }
+        QPushButton:disabled {
+            background-color: transparent;
+        }</string>
       </property>
       <property name="text">
        <string/>
@@ -591,7 +598,14 @@ QPushButton:pressed {
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">color: rgb(255, 255, 255);</string>
+       <string notr="true">QPushButton {
+            background-color: transparent;  /* 背景透明 */
+            border: none;                   /* 去掉边框 */
+            outline: none;                  /* 去掉点击后的外框 */
+        }
+        QPushButton:disabled {
+            background-color: transparent;  /* 禁用时也透明 */
+        }</string>
       </property>
       <property name="text">
        <string/>
@@ -639,6 +653,38 @@ QPushButton:pressed {
       </property>
       <property name="alignment">
        <set>Qt::AlignmentFlag::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>28</y>
+        <width>15</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>img/LeftArrow.png</pixmap>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>170</x>
+        <y>28</y>
+        <width>15</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>img/rightArrow.png</pixmap>
       </property>
      </widget>
     </widget>
