@@ -15,6 +15,7 @@
 #include <QTableWidgetItem>
 #include "mainwindow.h"
 #include "userprofile.h"
+#include<QFile>
 Deal::Deal(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Deal)
@@ -25,7 +26,15 @@ Deal::Deal(QWidget *parent)
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit->setMinimumDate(QDate::currentDate());
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+    QFile qssFile(":/styles/Dealstyle.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
+
 
 Deal::Deal(const QString &userID, QWidget *parent)
     : QWidget(parent)
@@ -59,6 +68,13 @@ Deal::Deal(const QString &userID, QWidget *parent)
         this->close();
     });
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+    QFile qssFile(":/styles/Dealstyle.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 
 }
 
@@ -142,12 +158,12 @@ void Deal::searchTickets()
         ui->tableWidget_tickets->setItem(row, 1, new QTableWidgetItem(query.value(2).toString()));
         ui->tableWidget_tickets->setItem(row, 2, new QTableWidgetItem(query.value(3).toString()));
         ui->tableWidget_tickets->setItem(row, 3, new QTableWidgetItem(query.value(4).toString()));
-        
+
         QDateTime depTime = query.value(5).toDateTime();
         QDateTime arrTime = query.value(6).toDateTime();
         ui->tableWidget_tickets->setItem(row, 4, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
         ui->tableWidget_tickets->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
-        
+
         ui->tableWidget_tickets->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(7).toDouble(), 'f', 2)));
         ui->tableWidget_tickets->setItem(row, 7, new QTableWidgetItem(query.value(8).toString()));
         ui->tableWidget_tickets->setItem(row, 8, new QTableWidgetItem(query.value(9).toString()));
