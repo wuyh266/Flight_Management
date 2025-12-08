@@ -12,7 +12,10 @@ SOURCES += \
     MainWindow.cpp \
     deal.cpp \
     edit_infor.cpp \
+    favorite_dialog.cpp \
     main.cpp \
+    passenger.cpp \
+    pay.cpp \
     sign_in.cpp \
     single_center.cpp \
     order_dialog.cpp \
@@ -21,7 +24,10 @@ SOURCES += \
 HEADERS += \
     MainWindow.h \
     deal.h \
+    favorite_dialog.h \
+    passenger.h \
     edit_infor.h \
+    pay.h \
     sign_in.h \
     single_center.h \
     order_dialog.h \
@@ -30,7 +36,10 @@ HEADERS += \
 FORMS += \
     MainWindow.ui \
     deal.ui \
+    favorite_dialog.ui \
+    passenger.ui \
     edit_infor.ui \
+    pay.ui \
     sign_in.ui \
     single_center.ui \
     order_dialog.ui \
@@ -40,10 +49,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
-
-DISTFILES += \
-    Dealstyle.qss \
-    style.qss
 
 RESOURCES += \
     resource.qrc

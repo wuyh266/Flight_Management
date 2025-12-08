@@ -5,7 +5,6 @@
 #include <QDebug>
 #include <QSqlQuery>
 #include <QSqlError>
-#include<QFile>
 
 Sign_in::Sign_in(QWidget *parent)
     : QWidget(parent)
@@ -105,19 +104,7 @@ void Sign_in::on_Sign_in_Button_clicked()
         QMessageBox::warning(this,"提示","ID不能为空！");
         return;
     }
-
-    // 连接数据库
-    QSqlDatabase dbcon;
-    if (QSqlDatabase::contains("qt_sql_default_connection")) {
-        dbcon = QSqlDatabase::database("qt_sql_default_connection");
-    } else {
-        dbcon = QSqlDatabase::addDatabase("QMYSQL");
-        dbcon.setHostName("127.0.0.1");
-        dbcon.setPort(3306);
-        dbcon.setDatabaseName("flight");
-        dbcon.setUserName("root");
-        dbcon.setPassword("328168");
-    }
+    QSqlDatabase dbcon = QSqlDatabase::database();
     if (!dbcon.isOpen()) {
         bool ok = dbcon.open();
         if (!ok) {
@@ -155,4 +142,3 @@ void Sign_in::on_Sign_in_Cencel_clicked()
 {
     this->close();
 }
-

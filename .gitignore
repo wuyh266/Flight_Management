@@ -11,4 +11,34 @@ release/
 # 临时文件
 *.o
 *.obj
+<<<<<<< HEAD
 *.exe
+=======
+*.exe
+# Qt 编译生成文件夹
+build/
+debug/
+release/
+Flight/build/
+
+# 编译中间文件
+*.o
+*.obj
+*.moc
+*.ui
+ui_*.h
+moc_*.cpp
+
+# 可执行文件
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 配置文件
+*.pro.user
+*.stash
+Makefile*
+
+
+>>>>>>> e60a744b5de510d10c094176631bfe9fca952d18

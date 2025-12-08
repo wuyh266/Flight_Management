@@ -5,5 +5,10 @@
     <qresource prefix="/styles">
         <file>Dealstyle.qss</file>
         <file>style.qss</file>
+    <qresource prefix="/">
+        <file>pay_imag/alipay.jpg</file>
+        <file>pay_imag/wechat.jpg</file>
+        <file>img/LeftArrow.png</file>
+        <file>img/rightArrow.png</file>
     </qresource>
 </RCC>

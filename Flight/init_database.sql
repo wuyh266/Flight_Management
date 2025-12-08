@@ -3,28 +3,36 @@
 
 -- 用户表（如果不存在）
 CREATE TABLE IF NOT EXISTS users (
-    UserID INT AUTO_INCREMENT PRIMARY KEY,
-    Username VARCHAR(50) NOT NULL UNIQUE,
-    PWord VARCHAR(50) NOT NULL,
-    CreatedTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  UserID int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  Username varchar(20) DEFAULT NULL,
+  IDCard varchar(18) DEFAULT NULL,
+  Deal int DEFAULT NULL,
+  PWord varchar(20) DEFAULT NULL,
+  jianjie varchar(50) DEFAULT NULL,
+  avatar longblob
 );
+ALTER TABLE users ADD COLUMN Balance DECIMAL(10, 2) NOT NULL DEFAULT 0.00;
 
 -- 票务表（航班/车次信息）
-CREATE TABLE IF NOT EXISTS tickets (
-    TicketID INT AUTO_INCREMENT PRIMARY KEY,
-    TicketType VARCHAR(10) NOT NULL COMMENT '类型：Flight-航班, Train-火车, Bus-汽车',
-    TicketNo VARCHAR(20) NOT NULL COMMENT '票务编号',
-    DepartureCity VARCHAR(50) NOT NULL COMMENT '出发城市',
-    ArrivalCity VARCHAR(50) NOT NULL COMMENT '到达城市',
-    DepartureTime DATETIME NOT NULL COMMENT '出发时间',
-    ArrivalTime DATETIME NOT NULL COMMENT '到达时间',
-    Price DECIMAL(10, 2) NOT NULL COMMENT '价格',
-    TotalSeats INT NOT NULL DEFAULT 100 COMMENT '总座位数',
-    AvailableSeats INT NOT NULL DEFAULT 100 COMMENT '可用座位数',
-    Company VARCHAR(100) COMMENT '航空公司/铁路公司',
-    Status VARCHAR(10) DEFAULT 'Available' COMMENT '状态：Available-可用, SoldOut-售完, Cancelled-取消',
-    CreatedTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE flight_info(
+  flight_id int NOT NULL AUTO_INCREMENT,
+  flight_number varchar(10) NOT NULL,
+  departure_city varchar(20) NOT NULL,
+  arrival_city varchar(20) NOT NULL,
+  departure_time datetime NOT NULL,
+  arrival_time datetime NOT NULL,
+  price decimal(10,2) DEFAULT '700.00',
+  departure_airport varchar(20) NOT NULL,
+  arrival_airport varchar(20) NOT NULL,
+  airline_company varchar(20) NOT NULL,
+  checkin_start_time datetime NOT NULL,
+  checkin_end_time datetime NOT NULL,
+  status varchar(10) NOT NULL,
+  availableSeat int DEFAULT 0,
+  PRIMARY KEY (`flight_id`),
+  UNIQUE KEY `flight_number` (`flight_number`)
+)
+
 
 -- 订单表
 CREATE TABLE IF NOT EXISTS orders (
@@ -40,19 +48,28 @@ CREATE TABLE IF NOT EXISTS orders (
     OrderStatus VARCHAR(20) DEFAULT 'Pending' COMMENT '订单状态：Pending-待支付, Paid-已支付, Cancelled-已取消, Completed-已完成',
     OrderTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',
     FOREIGN KEY (UserID) REFERENCES users(UserID) ON DELETE CASCADE,
-    FOREIGN KEY (TicketID) REFERENCES tickets(TicketID) ON DELETE CASCADE
+    FOREIGN KEY (TicketID) REFERENCES flight_info(flight_id) ON DELETE CASCADE
 );
 
--- 插入示例票务数据
-INSERT INTO tickets (TicketType, TicketNo, DepartureCity, ArrivalCity, DepartureTime, ArrivalTime, Price, TotalSeats, AvailableSeats, Company, Status) VALUES
-('Flight', 'CA1234', '北京', '上海', '2024-12-20 08:00:00', '2024-12-20 10:30:00', 680.00, 150, 150, '中国国际航空', 'Available'),
-('Flight', 'MU5678', '北京', '上海', '2024-12-20 14:00:00', '2024-12-20 16:30:00', 720.00, 180, 180, '中国东方航空', 'Available'),
-('Flight', 'CZ9012', '上海', '广州', '2024-12-21 09:00:00', '2024-12-21 11:30:00', 850.00, 200, 200, '中国南方航空', 'Available'),
-('Flight', 'CA3456', '广州', '深圳', '2024-12-21 15:00:00', '2024-12-21 16:00:00', 380.00, 120, 120, '中国国际航空', 'Available'),
-('Train', 'G123', '北京', '上海', '2024-12-20 07:00:00', '2024-12-20 12:30:00', 553.00, 500, 500, '中国铁路', 'Available'),
-('Train', 'G456', '北京', '上海', '2024-12-20 13:00:00', '2024-12-20 18:30:00', 553.00, 500, 498, '中国铁路', 'Available'),
-('Train', 'D789', '上海', '广州', '2024-12-21 08:00:00', '2024-12-21 16:00:00', 730.00, 600, 600, '中国铁路', 'Available'),
-('Train', 'G101', '广州', '深圳', '2024-12-21 10:00:00', '2024-12-21 11:00:00', 74.50, 800, 800, '中国铁路', 'Available'),
-('Bus', 'B001', '北京', '天津', '2024-12-20 08:00:00', '2024-12-20 10:00:00', 45.00, 40, 40, '长途客运', 'Available'),
-('Bus', 'B002', '上海', '苏州', '2024-12-20 09:00:00', '2024-12-20 10:30:00', 35.00, 45, 45, '长途客运', 'Available');
+CREATE TABLE IF NOT EXISTS favorites (
+    FavoriteID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    TicketID INT NOT NULL,
+    CreatedTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES users(UserID) ON DELETE CASCADE,
+    FOREIGN KEY (TicketID) REFERENCES flight_info(flight_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_ticket (UserID, TicketID)
+);
+
+create table passengers
+(
+    PassengerID int auto_increment primary key,
+    UserID      int not null,
+    Name        varchar(50) not null,
+    IDCard      varchar(18) not null,
+    Phone       varchar(11) not null,
+    CreatedTime datetime default CURRENT_TIMESTAMP null,
+    constraint unique_user_idcard unique (UserID, IDCard),
+    constraint passengers_ibfk_1 foreign key (UserID) references users (UserID)
+);
 

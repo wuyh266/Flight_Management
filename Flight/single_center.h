@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <QString>
-
+#include<pay.h>
 namespace Ui {
 class Single_Center;
 }
@@ -19,11 +19,14 @@ public:
     void refreshOrderList();
 signals:
     void backRequested();
+    void dataChanged();
 private slots:
 
     void onCancelOrder();
+    void onDeleteOrder();
     void onViewOrder();
     void on_btn_back_clicked();
+    void onAddFavorite();
 private:
     void initTable();
     void loadOrders();

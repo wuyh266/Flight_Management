@@ -27,10 +27,11 @@ QWidget {
 }
 
 QWidget#UserProfile {
-    background-color: #2d2d2d; /* 全局深色背景 */
+    background-color: #2d2d2d;
+    /* 全局深色背景 */
 }
 
-/* ================= 按钮统一风格 (复用 deal.ui 样式) ================= */
+/* ================= 按钮统一风格 ================= */
 QPushButton {
     background-color: #606060;
     border: 1px solid #ffffff;
@@ -48,12 +49,12 @@ QPushButton:hover {
 }
 
 QPushButton:pressed {
-    background-color: #404040;      
-    border: 1px solid #555555;     
-    padding-left: 10px;            
-    padding-top: 10px;               
-    padding-right: 6px;           
-    padding-bottom: 6px;             
+    background-color: #404040;
+    border: 1px solid #555555;
+    padding-left: 10px;
+    padding-top: 10px;
+    padding-right: 6px;
+    padding-bottom: 6px;
 
     box-shadow: inset 4px 4px 8px #202020,
                 inset -4px -4px 8px #505050;
@@ -137,8 +138,12 @@ QLineEdit[readOnly=&quot;true&quot;] {
       <x>880</x>
       <y>5</y>
       <width>80</width>
-      <height>30</height>
+      <height>31</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(255, 255, 255);
+color: rgb(0, 0, 0);</string>
     </property>
     <property name="text">
      <string>返回</string>
@@ -177,6 +182,9 @@ QLineEdit[readOnly=&quot;true&quot;] {
     </property>
     <property name="text">
      <string>照片</string>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QWidget" name="formLayoutWidget">
@@ -291,14 +299,14 @@ QLineEdit[readOnly=&quot;true&quot;] {
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_6">
+      <widget class="QPushButton" name="btn_recharge">
        <property name="text">
         <string>充值</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButton_2">
+      <widget class="QPushButton" name="btn_favorites">
        <property name="text">
         <string>收藏</string>
        </property>
@@ -334,6 +342,13 @@ QLineEdit[readOnly=&quot;true&quot;] {
       <widget class="QPushButton" name="pushButton_9">
        <property name="text">
         <string>注销</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_10">
+       <property name="text">
+        <string>乘客信息</string>
        </property>
       </widget>
      </item>

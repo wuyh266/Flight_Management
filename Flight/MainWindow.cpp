@@ -8,7 +8,6 @@
 #include "sign_in.h"
 #include "deal.h"
 #include "userprofile.h"
-#include<QFile>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -27,17 +26,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 void ConnectDatabase(){
-    QSqlDatabase dbcon;
-    if (QSqlDatabase::contains("qt_sql_default_connection")) {
-        dbcon = QSqlDatabase::database("qt_sql_default_connection");
-    } else {
-        dbcon = QSqlDatabase::addDatabase("QMYSQL");
-        dbcon.setHostName("127.0.0.1");
-        dbcon.setPort(3306);
-        dbcon.setDatabaseName("flight");
-        dbcon.setUserName("root");
-        dbcon.setPassword("123456");
-    }
+    QSqlDatabase dbcon = QSqlDatabase::database();
     if (!dbcon.isOpen()) {
         bool ok = dbcon.open();
         if (ok) {
@@ -54,51 +43,71 @@ bool checkUserU(QString &username,QString &password){
         qDebug() << "请先连接数据库！";
         return false;
     }
-    QSqlQuery query;
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery query(db);
     QString sql="SELECT Username, PWord FROM users where Username=? AND PWord=?";
     query.prepare(sql);
     query.addBindValue(username);
     query.addBindValue(password);
-    if (!query.exec()) {
-        qDebug() << "查询失败：" << query.lastError().text();
-        return false;
+
+    bool result = false;
+    if (query.exec() && query.next()) {
+        result = true;
     }
-    return query.next();
+    query.finish();
+    return result;
 }
 bool checkUserI(QString &ID,QString &password){
     if (!QSqlDatabase::database().isOpen()) {
         qDebug() << "请先连接数据库！";
         return false;
     }
-    QSqlQuery query;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery query(db);
     QString sql="SELECT IDCard, PWord FROM users where IDCard=? AND PWord=?";
     query.prepare(sql);
     query.addBindValue(ID);
     query.addBindValue(password);
-    if (!query.exec()) {
-        qDebug() << "查询失败：" << query.lastError().text();
-        return false;
+
+    bool result = false;
+    if (query.exec() && query.next()) {
+        result = true;
     }
-    return query.next();
+    query.finish();
+    return result;
 }
 QString GetUserID(QString &input,QString &password){
     if (!QSqlDatabase::database().isOpen()) {
         qDebug() << "请先连接数据库！";
         return QString();
     }
-    QSqlQuery query;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) {
+        qDebug() << "请先连接数据库！";
+        return QString();
+    }
+    QSqlQuery query(db);  // 显式指定数据库连接
+
     query.prepare("SELECT UserID FROM users where Username=? AND PWord=?");
     query.addBindValue(input);
     query.addBindValue(password);
     if(query.exec()&&query.next()){
-        return query.value(0).toString();
+
+        QString uid = query.value(0).toString();
+        query.finish();
+        return uid;
     }
     query.prepare("SELECT UserID FROM users where IDCard=? AND PWord=?");
     query.addBindValue(input);
     query.addBindValue(password);
     if(query.exec()&&query.next()){
-        return query.value(0).toString();
+        QString uid = query.value(0).toString();
+        query.finish();
+        return uid;
     }
+    query.finish();
     return QString();
 }
 
@@ -123,8 +132,6 @@ void MainWindow::on_log_in_clicked()
     else{
         QMessageBox::warning(this, "失败", "用户名或密码错误！");
     }
-    UserProfile *us=new UserProfile();
-    connect(this,SIGNAL(usernameSubmitted(QString)),us,SLOT(getData(QString)));
 }
 void MainWindow::on_sign_in_clicked()
 {
@@ -132,5 +139,3 @@ void MainWindow::on_sign_in_clicked()
     s->setAttribute(Qt::WA_DeleteOnClose);
     s->show();
 }
-
-
