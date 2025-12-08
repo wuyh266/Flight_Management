@@ -125,7 +125,6 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
     while (query.next()) {
         QDateTime existingDepTime = query.value(0).toDateTime();
         QDateTime existingArrTime = query.value(1).toDateTime();
-        QString ticketNo = query.value(2).toString();
 
         // 时间冲突判断逻辑
         bool timeOverlap = (newDepTime < existingArrTime && newArrTime > existingDepTime);

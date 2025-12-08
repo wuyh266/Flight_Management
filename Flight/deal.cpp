@@ -107,14 +107,18 @@ void Deal::initTable()
 {
     QStringList headers;
     headers << "编号" << "出发地" << "目的地" << "出发时间"
-            << "到达时间" << "价格(元)" << "可用座位" << "公司" << "操作";
+            << "到达时间" << "价格(元)" << "可用座位" << "公司" << "操作" << "收藏";
     ui->tableWidget_tickets->setColumnCount(headers.size());
     ui->tableWidget_tickets->setHorizontalHeaderLabels(headers);
-    ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    // ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     // 关键列手动调整宽度（避免文字截断）
-    ui->tableWidget_tickets->setColumnWidth(3, 150);  // 出发时间
-    ui->tableWidget_tickets->setColumnWidth(4, 150);  // 到达时间
-    ui->tableWidget_tickets->setColumnWidth(8, 80);  // 操作列
+    ui->tableWidget_tickets->setColumnWidth(2, 135);
+    ui->tableWidget_tickets->setColumnWidth(3, 125);  // 出发时间
+    ui->tableWidget_tickets->setColumnWidth(4, 125);  // 到达时间
+    ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
+    ui->tableWidget_tickets->setColumnWidth(6, 90);
+    ui->tableWidget_tickets->setColumnWidth(8, 60);   // 操作列
+    ui->tableWidget_tickets->setColumnWidth(9, 60);   //收藏
 
     ui->tableWidget_tickets->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -319,6 +323,20 @@ void Deal::searchTickets(int pageNum)
         QMessageBox::warning(this, "错误", "数据库连接未初始化！");
         return;
     }
+
+    QList<int> favoriteTicketIds;
+    if (!currentUserID.isEmpty()) {
+        QSqlQuery favQuery;
+        favQuery.prepare("SELECT TicketID FROM favorites WHERE UserID = :uid");
+        favQuery.bindValue(":uid", currentUserID);
+        if (favQuery.exec()) {
+            while(favQuery.next()) {
+                favoriteTicketIds.append(favQuery.value(0).toInt());
+            }
+        }
+        favQuery.finish();
+    }
+
     if (!db.isOpen()) {
         if (!db.open()) {
             QMessageBox::warning(this, "错误", "数据库连接失败：" + db.lastError().text());
@@ -410,6 +428,16 @@ void Deal::searchTickets(int pageNum)
         btnBook->setProperty("ticketId", ticketId);
         connect(btnBook, &QPushButton::clicked, this, &Deal::onBookTicket);
         ui->tableWidget_tickets->setCellWidget(row, 8, btnBook);
+
+        bool isFavorited = favoriteTicketIds.contains(ticketId);
+        QPushButton *btnFav = new QPushButton(isFavorited ? "已收藏" : "收藏");
+        btnFav->setProperty("ticketId", ticketId);
+
+        if (isFavorited) {
+            btnFav->setEnabled(false);
+        }
+        connect(btnFav, &QPushButton::clicked, this, &Deal::onAddFavorite);
+        ui->tableWidget_tickets->setCellWidget(row, 9, btnFav);
 
         row++;
     }

@@ -26,6 +26,7 @@ private slots:
     void onDeleteOrder();
     void onViewOrder();
     void on_btn_back_clicked();
+    void onAddFavorite();
 private:
     void initTable();
     void loadOrders();
