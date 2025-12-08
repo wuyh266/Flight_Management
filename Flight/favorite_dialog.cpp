@@ -39,6 +39,7 @@ void favorite_dialog::initTable()
             << "出发时间" << "到达时间" << "价格（元）" << "公司" << "收藏";
     ui->tableWidget_favorites->setHorizontalHeaderLabels(headers);
     ui->tableWidget_favorites->setColumnCount(headers.size());
+    ui->tableWidget_favorites->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->tableWidget_favorites->horizontalHeader()->setStretchLastSection(true);
     ui->tableWidget_favorites->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_favorites->setSelectionBehavior(QAbstractItemView::SelectRows);

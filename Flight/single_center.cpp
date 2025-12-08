@@ -86,10 +86,24 @@ void Single_Center::loadOrders()
         QMessageBox::warning(this, "错误", "数据库未连接！");
         return;
     }
+
+    QList<int> favoriteTicketIds;
+    if (userId!=-1) {
+        QSqlQuery favQuery;
+        favQuery.prepare("SELECT TicketID FROM favorites WHERE UserID = :uid");
+        favQuery.bindValue(":uid", userId);
+        if (favQuery.exec()) {
+            while(favQuery.next()) {
+                favoriteTicketIds.append(favQuery.value(0).toInt());
+            }
+        }
+        favQuery.finish();
+    }
+
     QSqlQuery query(db);  // 显式指定数据库连接
     query.prepare("SELECT o.OrderID, o.OrderNo, o.OrderStatus, o.TicketCount, o.TotalPrice, "
                   "o.OrderTime, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
-                  "t.departure_time, t.arrival_time, t.flight_number "
+                  "t.departure_time, t.arrival_time, t.flight_number, t.flight_id "
                   "FROM orders o "
                   "JOIN flight_info t ON o.TicketID = t.flight_id "
                   "WHERE o.UserID = ? "
@@ -159,6 +173,17 @@ void Single_Center::loadOrders()
         } else {
             ui->tableWidget_orders->setItem(row, 8, new QTableWidgetItem("-"));
         }
+
+        int ticketId=query.value("flight_id").toInt();
+        bool isFavorited = favoriteTicketIds.contains(ticketId);
+        QPushButton *btnFav = new QPushButton(isFavorited ? "已收藏" : "收藏");
+        btnFav->setProperty("ticketId", ticketId);
+
+        if (isFavorited) {
+            btnFav->setEnabled(false);
+        }
+        connect(btnFav, &QPushButton::clicked, this, &Single_Center::onAddFavorite);
+        ui->tableWidget_orders->setCellWidget(row, 9, btnFav);
 
         row++;
     }
@@ -303,6 +328,36 @@ void Single_Center::onDeleteOrder()
     }
 }
 
+void Single_Center::onAddFavorite()
+{
+    int currentUserID=getUserId();
+    if (currentUserID==-1) {
+        QMessageBox::warning(this, "提示", "请先登录！");
+        return;
+    }
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn) return;
+    int ticketId = btn->property("ticketId").toInt();
+
+    QSqlQuery insertQuery;
+    insertQuery.prepare("INSERT INTO favorites (UserID, TicketID) VALUES (?, ?)");
+    insertQuery.addBindValue(currentUserID);
+    insertQuery.addBindValue(ticketId);
+
+    if (insertQuery.exec()) {
+        QMessageBox::information(this, "成功", "已添加到收藏夹！");
+        btn->setEnabled(false);
+        btn->setText("已收藏");
+    } else {
+        if (insertQuery.lastError().text().contains("Duplicate") ||
+            insertQuery.lastError().text().contains("UNIQUE")) {
+            QMessageBox::information(this, "提示", "您已经收藏过该行程了！");
+        } else {
+            QMessageBox::critical(this, "错误", "收藏失败：" + insertQuery.lastError().text());
+        }
+    }
+    insertQuery.finish();
+}
 void Single_Center::onViewOrder()
 {
 
