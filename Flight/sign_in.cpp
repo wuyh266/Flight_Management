@@ -5,7 +5,7 @@
 #include <QDebug>
 #include <QSqlQuery>
 #include <QSqlError>
-
+#include<QFile>
 Sign_in::Sign_in(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Sign_in)

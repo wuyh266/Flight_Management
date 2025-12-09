@@ -8,6 +8,7 @@
 #include "sign_in.h"
 #include "deal.h"
 #include "userprofile.h"
+#include<QFile>
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)

@@ -26,6 +26,7 @@ signals:
     void myOrdersRequested();
     void logoutRequested();
     void myFavoritesRequested();
+    void avatarUpdated();
 
 private slots:
     void on_btn_back_clicked();

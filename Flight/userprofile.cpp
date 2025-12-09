@@ -9,13 +9,20 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QPixmap>
-
+#include<QFile>
 UserProfile::UserProfile(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::UserProfile)
 {
     ui->setupUi(this);
     connect(ui->btn_back, &QPushButton::clicked, this, &UserProfile::on_btn_back_clicked);
+    QFile qssFile(":/styles/userprofile.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 
@@ -29,6 +36,13 @@ UserProfile::UserProfile(const QString &userID, QWidget *parent)
     connect(ui->btn_back, &QPushButton::clicked, this, &UserProfile::on_btn_back_clicked);
     if (!this->userID.isEmpty()) {
         getData(this->userID);
+    }
+    QFile qssFile(":/styles/userprofile.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
     }
 }
 
@@ -138,6 +152,7 @@ void UserProfile::on_pushButton_5_clicked()
 
     connect(e, &edit_infor::change_avatar, this, [this](QPixmap pixmap){
         ui->label_2->setPixmap(pixmap);
+         emit avatarUpdated();
     });
 
     connect(e, &QDialog::finished, this, [this]{
