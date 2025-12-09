@@ -5,12 +5,36 @@
 #include <QDebug>
 #include <QSqlQuery>
 #include <QSqlError>
-
+#include<QFile>
 Sign_in::Sign_in(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Sign_in)
 {
     ui->setupUi(this);
+    this->setObjectName("signInWidget");
+    this->setAttribute(Qt::WA_StyledBackground, true);
+
+
+    QString styleSheet =
+        "#signInWidget {\n"
+        "    background-image: url(:/images/flight2.png);\n"
+        "    background-position: center;\n"
+        "    background-repeat: no-repeat;\n"
+        "    background-size: cover;\n"
+        "}\n";
+
+    QFile qssFile(":/styles/style.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString controlStyles = QLatin1String(qssFile.readAll());
+        controlStyles = controlStyles.replace("QMainWindow, QWidget, QDialog {", "/* 移除窗口背景设置 */");
+        controlStyles = controlStyles.replace("background-image: url(:/images/flight2.png);", "");
+        // 合并样式
+        styleSheet += "\n" + controlStyles;
+
+        qssFile.close();
+    }
+
+    this->setStyleSheet(styleSheet);
 }
 
 Sign_in::~Sign_in()

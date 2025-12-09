@@ -9,7 +9,7 @@
 #include <QHeaderView>
 #include <QDateTime>
 #include <QTableWidgetItem>
-
+#include<QFile>
 Single_Center::Single_Center(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Single_Center)
@@ -17,6 +17,13 @@ Single_Center::Single_Center(QWidget *parent)
     ui->setupUi(this);
     currentUsername = "";
     initTable();
+    QFile qssFile(":/styles/single.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 Single_Center::Single_Center(const QString &username, QWidget *parent)
@@ -29,6 +36,13 @@ Single_Center::Single_Center(const QString &username, QWidget *parent)
     loadOrders();
     connect(ui->btn_refresh, &QPushButton::clicked, this, &Single_Center::refreshOrderList);
     connect(ui->btn_back, &QPushButton::clicked, this, &Single_Center::on_btn_back_clicked);
+    QFile qssFile(":/styles/single.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 Single_Center::~Single_Center()

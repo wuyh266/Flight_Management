@@ -34,6 +34,9 @@ private:
     void searchTickets(int pageNum);
     int getTotalPage();
     void initPagination();
+    void getData(const QString &userID);
+    void setCircularAvatar(const QByteArray &avatarData);
+
     QString currentUserID;
 
     Ui::Deal *ui;

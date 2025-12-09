@@ -9,12 +9,19 @@
 #include <QHeaderView>
 #include <QDateTime>
 #include <QTableWidgetItem>
-
+#include<QFile>
 favorite_dialog::favorite_dialog(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::favorite_dialog)
 {
     ui->setupUi(this);
+    QFile qssFile(":/styles/favorite.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 favorite_dialog::favorite_dialog(const QString &userID, QWidget *parent)
@@ -25,6 +32,13 @@ favorite_dialog::favorite_dialog(const QString &userID, QWidget *parent)
     ui->setupUi(this);
     initTable();
     loadFavorites(); // 构造时加载数据
+    QFile qssFile(":/styles/favorite.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 favorite_dialog::~favorite_dialog()

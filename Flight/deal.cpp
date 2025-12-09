@@ -1,3 +1,4 @@
+
 #include "deal.h"
 #include "ui_deal.h"
 #include "single_center.h"
@@ -17,7 +18,9 @@
 #include <QScrollBar>    // 新增：控制滚动条
 #include "mainwindow.h"
 #include "userprofile.h"
-
+#include<QFile>
+#include<QPainter>
+#include<QPainterPath>
 #define PAGE_SIZE 50  // 每页显示50条
 int currentPage = 1;
 int totalPage = 0;
@@ -32,6 +35,13 @@ Deal::Deal(QWidget *parent)
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit->setMinimumDate(QDate::currentDate());
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+     QFile qssFile(":/styles/Dealstyle.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 
     initPagination();
 }
@@ -43,6 +53,7 @@ Deal::Deal(const QString &userID, QWidget *parent)
     ui->setupUi(this);
     currentUserID = userID;
     initTable();
+    getData(userID);
     ui->dateEdit->setDate(QDate::currentDate());
     ui->dateEdit->setMinimumDate(QDate::currentDate());
 
@@ -75,8 +86,11 @@ Deal::Deal(const QString &userID, QWidget *parent)
         m_personalCenterPage->refreshOrderList();
         ui->stackedWidget->setCurrentWidget(m_personalCenterPage);
     });
-
-
+    connect(m_userProfilePage, &UserProfile::avatarUpdated, this, [=](){
+        if (!currentUserID.isEmpty()) {
+            getData(currentUserID);
+        }
+    });
     connect(m_userProfilePage, &UserProfile::logoutRequested, this, [=](){
         MainWindow *loginWindow = new MainWindow();
         loginWindow->show();
@@ -95,8 +109,72 @@ Deal::Deal(const QString &userID, QWidget *parent)
 
     initPagination();
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
+     QFile qssFile(":/styles/Dealstyle.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
+void Deal::setCircularAvatar(const QByteArray &avatarData)
+{
+    QPixmap pixmap;
+    if (!avatarData.isEmpty() && pixmap.loadFromData(avatarData)) {
+        // 创建40x40的圆形头像
+        QPixmap circularPixmap(40, 40);
+        circularPixmap.fill(Qt::transparent);
 
+        QPainter painter(&circularPixmap);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+        // 创建圆形路径
+        QPainterPath path;
+        path.addEllipse(0, 0, 40, 40);
+        painter.setClipPath(path);
+
+        // 缩放并绘制图片
+        QPixmap scaled = pixmap.scaled(40, 40, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        painter.drawPixmap(0, 0, scaled);
+
+        // 绘制白色边框（可选）
+        painter.setPen(QPen(QColor(255, 255, 255, 153), 1));
+        painter.setBrush(Qt::NoBrush);
+        painter.drawEllipse(0, 0, 39, 39);  // 40x40 所以是 39
+
+        ui->Avatar->setPixmap(circularPixmap);
+    }
+}
+void Deal::getData(const QString &userID)
+{
+    qDebug() << "getData called with userID:" << userID;
+    if (userID.isEmpty()) return;
+
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isOpen()) return;
+
+    QSqlQuery query(db);
+    query.setForwardOnly(true);
+
+    query.prepare("SELECT  avatar FROM users WHERE UserID = ?");
+    query.addBindValue(userID.toInt());
+
+    if (query.exec()) {
+        if (query.next()) {
+
+            QByteArray avatarData = query.value(0).toByteArray();
+
+            if (!avatarData.isEmpty()) {
+                setCircularAvatar(avatarData);
+            }
+        }
+        query.finish(); // 成功时关闭
+    } else {
+        qDebug() << "getData Error:" << query.lastError().text();
+        query.finish();
+    }
+}
 Deal::~Deal()
 {
     delete ui;
