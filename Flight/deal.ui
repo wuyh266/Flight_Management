@@ -23,10 +23,10 @@
     </rect>
    </property>
    <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
+    <enum>QFrame::Shape::StyledPanel</enum>
    </property>
    <property name="frameShadow">
-    <enum>QFrame::Raised</enum>
+    <enum>QFrame::Shadow::Raised</enum>
    </property>
    <widget class="QLabel" name="Title">
     <property name="geometry">
@@ -65,10 +65,10 @@
     </rect>
    </property>
    <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
+    <enum>QFrame::Shape::StyledPanel</enum>
    </property>
    <property name="frameShadow">
-    <enum>QFrame::Raised</enum>
+    <enum>QFrame::Shadow::Raised</enum>
    </property>
    <widget class="QPushButton" name="home">
     <property name="geometry">
@@ -170,13 +170,13 @@
       <string notr="true"/>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Sunken</enum>
+      <enum>QFrame::Shadow::Sunken</enum>
      </property>
      <property name="selectionMode">
-      <enum>QAbstractItemView::SingleSelection</enum>
+      <enum>QAbstractItemView::SelectionMode::SingleSelection</enum>
      </property>
      <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
+      <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
      </property>
      <column>
       <property name="text">
@@ -267,7 +267,7 @@
       <property name="geometry">
        <rect>
         <x>90</x>
-        <y>28</y>
+        <y>27</y>
         <width>120</width>
         <height>25</height>
        </rect>
@@ -299,7 +299,7 @@
       <property name="geometry">
        <rect>
         <x>300</x>
-        <y>30</y>
+        <y>27</y>
         <width>120</width>
         <height>25</height>
        </rect>
@@ -331,7 +331,7 @@
       <property name="geometry">
        <rect>
         <x>490</x>
-        <y>20</y>
+        <y>23</y>
         <width>141</width>
         <height>33</height>
        </rect>
@@ -363,7 +363,7 @@
       <property name="geometry">
        <rect>
         <x>700</x>
-        <y>20</y>
+        <y>23</y>
         <width>131</width>
         <height>33</height>
        </rect>
@@ -396,7 +396,7 @@
       <property name="geometry">
        <rect>
         <x>880</x>
-        <y>20</y>
+        <y>19</y>
         <width>81</width>
         <height>41</height>
        </rect>
@@ -434,47 +434,53 @@
     <widget class="QLabel" name="label_pageInfo">
      <property name="geometry">
       <rect>
-       <x>440</x>
-       <y>790</y>
-       <width>201</width>
+       <x>475</x>
+       <y>786</y>
+       <width>141</width>
        <height>20</height>
       </rect>
      </property>
      <property name="text">
-      <string>第        页/共</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;第         页/ 共 30 页&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     </widget>
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>410</x>
-       <y>790</y>
+       <x>405</x>
+       <y>786</y>
        <width>21</width>
        <height>19</height>
       </rect>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>img/LeftArrow.png</pixmap>
      </property>
     </widget>
     <widget class="QLabel" name="label_2">
      <property name="geometry">
       <rect>
-       <x>640</x>
-       <y>790</y>
+       <x>625</x>
+       <y>786</y>
        <width>21</width>
        <height>19</height>
       </rect>
      </property>
      <property name="text">
       <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>img/rightArrow.png</pixmap>
      </property>
     </widget>
     <widget class="QPushButton" name="btn_prev">
      <property name="geometry">
       <rect>
        <x>400</x>
-       <y>790</y>
+       <y>781</y>
        <width>31</width>
        <height>28</height>
       </rect>
@@ -486,8 +492,8 @@
     <widget class="QPushButton" name="btn_next">
      <property name="geometry">
       <rect>
-       <x>640</x>
-       <y>790</y>
+       <x>620</x>
+       <y>781</y>
        <width>31</width>
        <height>28</height>
       </rect>
@@ -499,9 +505,9 @@
     <widget class="QLineEdit" name="lineEdit_pageNum">
      <property name="geometry">
       <rect>
-       <x>460</x>
-       <y>790</y>
-       <width>31</width>
+       <x>489</x>
+       <y>783</y>
+       <width>25</width>
        <height>25</height>
       </rect>
      </property>
