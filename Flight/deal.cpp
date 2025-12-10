@@ -108,6 +108,15 @@ Deal::Deal(const QString &userID, QWidget *parent)
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
 
     initPagination();
+    //点击头像进入个人界面
+    connect(ui->Avatar, &QPushButton::clicked, this, [=](){
+        if (currentUserID.isEmpty()) {
+            QMessageBox::warning(this, "提示", "请先登录！");
+            return;
+        }
+        m_userProfilePage->getData(currentUserID);
+        ui->stackedWidget->setCurrentWidget(m_userProfilePage);
+    });
     ui->stackedWidget->setCurrentWidget(ui->page_tickets);
      QFile qssFile(":/styles/Dealstyle.qss");
     if (qssFile.open(QFile::ReadOnly)) {
@@ -117,6 +126,7 @@ Deal::Deal(const QString &userID, QWidget *parent)
         qDebug()<<"成功读取文件";
     }
 }
+//绘制圆形头像
 void Deal::setCircularAvatar(const QByteArray &avatarData)
 {
     QPixmap pixmap;
@@ -143,9 +153,11 @@ void Deal::setCircularAvatar(const QByteArray &avatarData)
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(0, 0, 39, 39);  // 40x40 所以是 39
 
-        ui->Avatar->setPixmap(circularPixmap);
+        ui->Avatar->setIcon(QIcon(circularPixmap));
+        ui->Avatar->setIconSize(QSize(40, 40));
     }
 }
+//获取头像信息
 void Deal::getData(const QString &userID)
 {
     qDebug() << "getData called with userID:" << userID;
@@ -338,7 +350,7 @@ void Deal::updatePageContainerText()
 
     // 有数据时：拼接“第 [输入框] 页 / 共 X 页”
     QString pageText = QString("第        页 / 共 %1 页").arg(totalPage);
-    if(totalPage<10) ui->lineEdit_pageNum->setGeometry(63,26,25,20);
+
     ui->label_pageInfo->setText(pageText);
     ui->lineEdit_pageNum->setEnabled(true);
     ui->lineEdit_pageNum->setText(QString::number(currentPage));

@@ -7,7 +7,7 @@
 #include <QDebug>
 #include <QDateTime>
 #include <QRandomGenerator>
-
+#include<QFile>
 OrderDialog::~OrderDialog()
 {
     delete ui;
@@ -29,6 +29,13 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
     ui->spinBox_count->setMinimum(1);
     ui->spinBox_count->setMaximum(10);
     ui->spinBox_count->setValue(1);
+    QFile qssFile(":/styles/order.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 void OrderDialog::loadTicketInfo()

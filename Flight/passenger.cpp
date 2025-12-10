@@ -7,12 +7,20 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QWidget>
+#include<QFile>
 passenger::passenger(QWidget *parent) :
     QDockWidget(parent),
     ui(new Ui::passenger)
 {
     ui->setupUi(this);
     initTable();
+    QFile qssFile(":/styles/passenger.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+
+    }
 }
 
 passenger::passenger(const QString &username, QWidget *parent) :
@@ -23,6 +31,13 @@ passenger::passenger(const QString &username, QWidget *parent) :
     ui->setupUi(this);
     initTable();
     loadPassengers();
+    QFile qssFile(":/styles/passenger.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+
+    }
 }
 void passenger::setUsername(const QString &username)
 {
