@@ -206,7 +206,7 @@ void Deal::initTable()
     ui->tableWidget_tickets->setColumnWidth(4, 130);  // 到达时间
     ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
     ui->tableWidget_tickets->setColumnWidth(6, 80);   //可用座位
-    ui->tableWidget_tickets->setColumnWidth(7, 90);
+    ui->tableWidget_tickets->setColumnWidth(7, 90);   //公司
     ui->tableWidget_tickets->setColumnWidth(8, 55);   // 操作列
     ui->tableWidget_tickets->setColumnWidth(9, 55);   //收藏
 
