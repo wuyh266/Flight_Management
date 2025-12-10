@@ -6,6 +6,7 @@
 #include <QSqlError>
 #include <QDebug>
 #include <QPixmap>
+#include<QFile>
 Pay::Pay(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Pay)
@@ -18,7 +19,13 @@ Pay::Pay(QWidget *parent) :
             this, &Pay::on_amount_changed);
 
     ui->label_amount->setText("¥ 0.00");
-
+    QFile qssFile(":/styles/pay.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 
 }
 

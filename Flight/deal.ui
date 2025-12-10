@@ -41,17 +41,20 @@
      <string>航班管理系统</string>
     </property>
    </widget>
-   <widget class="QLabel" name="Avatar">
+   <widget class="QPushButton" name="Avatar">
     <property name="geometry">
      <rect>
-      <x>1130</x>
+      <x>1120</x>
       <y>10</y>
-      <width>51</width>
-      <height>51</height>
+      <width>41</width>
+      <height>41</height>
      </rect>
     </property>
     <property name="text">
-     <string>头像</string>
+     <string/>
+    </property>
+    <property name="flat">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

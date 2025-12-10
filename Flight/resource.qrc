@@ -8,6 +8,9 @@
         <file>userprofile.qss</file>
         <file>single.qss</file>
         <file>favorite.qss</file>
+        <file>order.qss</file>
+        <file>pay.qss</file>
+        <file>passenger.qss</file>
     </qresource>
     <qresource prefix="/">
         <file>pay_imag/alipay.jpg</file>
