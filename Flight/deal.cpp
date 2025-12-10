@@ -1,4 +1,3 @@
-
 #include "deal.h"
 #include "ui_deal.h"
 #include "single_center.h"
@@ -201,14 +200,15 @@ void Deal::initTable()
     ui->tableWidget_tickets->setColumnCount(headers.size());
     ui->tableWidget_tickets->setHorizontalHeaderLabels(headers);
     // 关键列手动调整宽度（避免文字截断）
-    ui->tableWidget_tickets->setColumnWidth(1, 135);  //出发地
-    ui->tableWidget_tickets->setColumnWidth(2, 135);  //目的地
-    ui->tableWidget_tickets->setColumnWidth(3, 125);  // 出发时间
-    ui->tableWidget_tickets->setColumnWidth(4, 125);  // 到达时间
+    ui->tableWidget_tickets->setColumnWidth(1, 155);  //出发地
+    ui->tableWidget_tickets->setColumnWidth(2, 155);  //目的地
+    ui->tableWidget_tickets->setColumnWidth(3, 130);  // 出发时间
+    ui->tableWidget_tickets->setColumnWidth(4, 130);  // 到达时间
     ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
-    ui->tableWidget_tickets->setColumnWidth(6, 90);   //可用座位
-    ui->tableWidget_tickets->setColumnWidth(8, 60);   // 操作列
-    ui->tableWidget_tickets->setColumnWidth(9, 60);   //收藏
+    ui->tableWidget_tickets->setColumnWidth(6, 80);   //可用座位
+    ui->tableWidget_tickets->setColumnWidth(7, 90);
+    ui->tableWidget_tickets->setColumnWidth(8, 55);   // 操作列
+    ui->tableWidget_tickets->setColumnWidth(9, 55);   //收藏
 
     ui->tableWidget_tickets->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -223,6 +223,7 @@ int Deal::getTotalPage()
     QString from = ui->lineEdit_from->text().trimmed();
     QString to = ui->lineEdit_to->text().trimmed();
     QString startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    QString searchTime=ui->dateEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
 
     if (!QSqlDatabase::database().isOpen()) {
         QMessageBox::warning(this, "错误", "数据库未连接！");
@@ -259,7 +260,10 @@ int Deal::getTotalPage()
 
     QSqlQuery countQuery(db);
     countQuery.prepare(countSql);
-    countQuery.bindValue(":start_time", startTime);
+    if(searchTime>startTime)
+        countQuery.bindValue(":start_time", searchTime);
+    else
+        countQuery.bindValue(":start_time", startTime);
     if (!from.isEmpty()) {
         countQuery.bindValue(":from", from + "%");
     }
@@ -350,7 +354,7 @@ void Deal::updatePageContainerText()
 
     // 有数据时：拼接“第 [输入框] 页 / 共 X 页”
     QString pageText = QString("第        页 / 共 %1 页").arg(totalPage);
-
+    if(totalPage<10) ui->lineEdit_pageNum->setGeometry(489,783,25,25);
     ui->label_pageInfo->setText(pageText);
     ui->lineEdit_pageNum->setEnabled(true);
     ui->lineEdit_pageNum->setText(QString::number(currentPage));
@@ -426,7 +430,7 @@ void Deal::searchTickets(int pageNum)
         ui->tableWidget_tickets->setUpdatesEnabled(false);
         ui->tableWidget_tickets->setRowCount(0);
         ui->tableWidget_tickets->setUpdatesEnabled(true);
-        ui->label_pageInfo->setText("暂无符合条件的数据");
+        ui->label_pageInfo->setText("0");
         ui->btn_prev->setEnabled(false);
         ui->btn_next->setEnabled(false);
         updatePageContainerText();
@@ -465,6 +469,7 @@ void Deal::searchTickets(int pageNum)
     }
 
     QString startTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    QString searchTime=ui->dateEdit->dateTime().toString("yyyy-MM-dd hh:mm:ss");
 
     QString sql = "SELECT flight_id, flight_number, departure_city, arrival_city, departure_time, arrival_time, "
                   "price, departure_airport, arrival_airport, airline_company, availableSeat "
@@ -493,8 +498,11 @@ void Deal::searchTickets(int pageNum)
         QMessageBox::critical(this, "查询错误", "SQL 预处理失败：" + query.lastError().text());
         return;
     }
+    if(searchTime>startTime)
+        query.bindValue(":start_time", searchTime);
+    else
+        query.bindValue(":start_time", startTime);
 
-    query.bindValue(":start_time", startTime);
 
     if (!from.isEmpty()) {
         query.bindValue(":from", from + "%");
@@ -544,7 +552,7 @@ void Deal::searchTickets(int pageNum)
 
         // 添加订票按钮
         QPushButton *btnBook = new QPushButton("订票");
-        btnBook->setStyleSheet("background-color:#4CAF50; color:white; border:none; padding:5px; border-radius:3px;");
+        btnBook->setStyleSheet("background-color:#4CAF50; color:white; border:none; padding:2px 8px; border-radius:3px;");
         btnBook->setProperty("ticketId", ticketId);
         connect(btnBook, &QPushButton::clicked, this, &Deal::onBookTicket);
         ui->tableWidget_tickets->setCellWidget(row, 8, btnBook);
@@ -552,6 +560,7 @@ void Deal::searchTickets(int pageNum)
         bool isFavorited = favoriteTicketIds.contains(ticketId);
         QPushButton *btnFav = new QPushButton(isFavorited ? "已收藏" : "收藏");
         btnFav->setProperty("ticketId", ticketId);
+        btnFav->setStyleSheet("border: 1px solid lightgray; padding:1px; border-radius:3px;");
 
         if (isFavorited) {
             btnFav->setEnabled(false);

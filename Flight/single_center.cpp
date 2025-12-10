@@ -63,7 +63,7 @@ void Single_Center::initTable()
     ui->tableWidget_orders->setHorizontalHeaderLabels(headers);
     ui->tableWidget_orders->horizontalHeader()->setStretchLastSection(QHeaderView::Stretch);
     ui->tableWidget_orders->setColumnWidth(1, 75);   //航班号
-    ui->tableWidget_orders->setColumnWidth(2, 225);  //路线
+    ui->tableWidget_orders->setColumnWidth(2, 270);  //路线
     ui->tableWidget_orders->setColumnWidth(3, 125);  // 出发时间
     ui->tableWidget_orders->setColumnWidth(4, 125);  // 到达时间
     ui->tableWidget_orders->setColumnWidth(5, 50);   // 票数
