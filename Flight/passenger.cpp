@@ -9,7 +9,7 @@
 #include <QWidget>
 #include<QFile>
 passenger::passenger(QWidget *parent) :
-    QDockWidget(parent),
+    QWidget(parent),
     ui(new Ui::passenger)
 {
     ui->setupUi(this);
@@ -24,7 +24,7 @@ passenger::passenger(QWidget *parent) :
 }
 
 passenger::passenger(const QString &username, QWidget *parent) :
-    QDockWidget(parent),
+    QWidget(parent),
     ui(new Ui::passenger),
     currentUsername(username)
 {
@@ -63,11 +63,6 @@ void passenger::initTable()
     ui->table_passengers->setColumnWidth(1, 200);  // 身份证
     ui->table_passengers->setColumnWidth(2, 120);  // 手机号
     ui->table_passengers->horizontalHeader()->setStretchLastSection(true); // 操作列自动拉伸
-
-    // 连接信号槽
-    connect(ui->btn_add, &QPushButton::clicked, this, &passenger::on_btn_add_clicked);
-    connect(ui->btn_refresh, &QPushButton::clicked, this, &passenger::on_btn_refresh_clicked);
-    connect(ui->btn_close, &QPushButton::clicked, this, &passenger::on_btn_close_clicked);
 }
 int passenger::getUserId()
 {

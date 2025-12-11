@@ -96,30 +96,67 @@ void UserProfile::on_pushButton_7_clicked() // 登录
 }
 
 
-void UserProfile::on_pushButton_9_clicked() // 注销
+void UserProfile::on_pushButton_9_clicked() // 注销账号
 {
-    QMessageBox msgBox(QMessageBox::Question, "注销", "确定要注销吗？",
+    QMessageBox msgBox(QMessageBox::Question, "注销账号",
+                       "确定要永久注销您的账号吗？\n此操作将删除您的所有个人信息、订单记录及余额，且不可恢复！",
                        QMessageBox::Yes | QMessageBox::No, this);
 
     msgBox.setStyleSheet(
-        "QMessageBox {"
-        "    background-color: white;"
-        "}"
-        "QLabel {"
-        "    color: black; "
-        "}"
-        "QPushButton {"
-        "    min-width: 80px;"
-        "   color:black;"
-        "   background-color:white; "
-        "   border: 1px solid black;"
-        "}"
+        "QMessageBox { background-color: white; }"
+        "QLabel { color: black; }"
+        "QPushButton { min-width: 80px; color:black; background-color:white; border: 1px solid black; }"
         );
 
     int ret = msgBox.exec();
 
     if (ret == QMessageBox::Yes) {
-        emit logoutRequested();
+        if (this->userID.isEmpty()) {
+            QMessageBox::warning(this, "错误", "无法获取当前用户ID，注销失败。");
+            return;
+        }
+
+        QSqlDatabase db = QSqlDatabase::database();
+        if (!db.isOpen()) {
+            QMessageBox::warning(this, "错误", "数据库未连接。");
+            return;
+        }
+        db.transaction();
+        QSqlQuery query(db);
+
+        try {
+            // 删除用户的收藏
+            query.prepare("DELETE FROM favorites WHERE UserID = ?");
+            query.addBindValue(this->userID);
+            if (!query.exec()) throw query.lastError();
+
+            // 删除乘客信息
+            query.prepare("DELETE FROM passengers WHERE UserID = ?");
+            query.addBindValue(this->userID);
+            if (!query.exec()) throw query.lastError();
+
+            // 删除订单
+            query.prepare("DELETE FROM orders WHERE UserID = ?");
+            query.addBindValue(this->userID);
+            if (!query.exec()) throw query.lastError();
+
+            // 删除用户主表记录
+            query.prepare("DELETE FROM users WHERE UserID = ?");
+            query.addBindValue(this->userID);
+            if (!query.exec()) throw query.lastError();
+
+            // 提交事务
+            db.commit();
+            QMessageBox::information(this, "成功", "账号已成功注销，期待与您再会。");
+
+            //发送退出信号，返回登录界面
+            emit logoutRequested();
+
+        } catch (const QSqlError &e) {
+            db.rollback();
+            QMessageBox::critical(this, "错误", "注销失败，数据库错误：" + e.text());
+            qDebug() << "Delete user error:" << e.text();
+        }
     }
 }
 

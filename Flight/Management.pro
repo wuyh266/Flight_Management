@@ -55,8 +55,9 @@ RESOURCES += \
 
 DISTFILES += \
     Dealstyle.qss \
+    edit_infor.qss \
     favorite.qss \
-    order.qss \
+    order_dialog.qss \
     passenger.qss \
     pay.qss \
     single.qss \
