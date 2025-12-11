@@ -9,12 +9,19 @@
 #include <QBuffer>
 #include <QPixmap>
 #include <QIODevice>
-
+#include<QFile>
 edit_infor::edit_infor(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::edit_infor)
 {
     ui->setupUi(this);
+    QFile qssFile(":/styles/edit_infor.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 }
 
 edit_infor::edit_infor(QString userID, QString username, QWidget *parent)
@@ -25,7 +32,13 @@ edit_infor::edit_infor(QString userID, QString username, QWidget *parent)
     , ui(new Ui::edit_infor)
 {
     ui->setupUi(this);
-
+    QFile qssFile(":/styles/edit_infor.qss");
+    if (qssFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(qssFile.readAll());
+        this->setStyleSheet(styleSheet);  // 只影响当前窗口
+        qssFile.close();
+        qDebug()<<"成功读取文件";
+    }
 
     ui->old_name->setText(username);
 

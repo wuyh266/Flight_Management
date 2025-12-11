@@ -29,6 +29,7 @@ private slots:
     void showTicketSearchPage();
     void on_lineEdit_pageNum_returnPressed();
     void updatePageContainerText();
+    void on_home_clicked();
 private:
     void initTable();
     void searchTickets(int pageNum);
