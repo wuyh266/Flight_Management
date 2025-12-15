@@ -199,16 +199,25 @@ void Deal::initTable()
             << "到达时间" << "价格(元)" << "可用座位" << "公司" << "操作" << "收藏";
     ui->tableWidget_tickets->setColumnCount(headers.size());
     ui->tableWidget_tickets->setHorizontalHeaderLabels(headers);
-    // 关键列手动调整宽度（避免文字截断）
-    ui->tableWidget_tickets->setColumnWidth(1, 155);  //出发地
-    ui->tableWidget_tickets->setColumnWidth(2, 155);  //目的地
-    ui->tableWidget_tickets->setColumnWidth(3, 130);  // 出发时间
-    ui->tableWidget_tickets->setColumnWidth(4, 130);  // 到达时间
-    ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
-    ui->tableWidget_tickets->setColumnWidth(6, 80);   //可用座位
-    ui->tableWidget_tickets->setColumnWidth(7, 90);   //公司
-    ui->tableWidget_tickets->setColumnWidth(8, 55);   // 操作列
-    ui->tableWidget_tickets->setColumnWidth(9, 55);   //收藏
+    QHeaderView *header = ui->tableWidget_tickets->horizontalHeader();
+
+    header->setSectionResizeMode(1, QHeaderView::Stretch);//出发地
+    header->setSectionResizeMode(2, QHeaderView::Stretch);//目的地
+
+    header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // 编号
+    header->setSectionResizeMode(3, QHeaderView::ResizeToContents); // 出发时间
+    header->setSectionResizeMode(4, QHeaderView::ResizeToContents); // 到达时间
+    header->setSectionResizeMode(7, QHeaderView::ResizeToContents); // 公司
+
+    header->setSectionResizeMode(5, QHeaderView::Interactive);      // 价格
+    header->setSectionResizeMode(6, QHeaderView::Interactive);      // 座位
+    ui->tableWidget_tickets->setColumnWidth(5, 85);
+    ui->tableWidget_tickets->setColumnWidth(6, 80);
+
+    header->setSectionResizeMode(8, QHeaderView::Fixed);
+    header->setSectionResizeMode(9, QHeaderView::Fixed);
+    ui->tableWidget_tickets->setColumnWidth(8, 60);
+    ui->tableWidget_tickets->setColumnWidth(9, 60);
     ui->tableWidget_tickets->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_tickets->verticalHeader()->setVisible(false);
@@ -536,7 +545,12 @@ void Deal::searchTickets(int pageNum)
         ui->tableWidget_tickets->setItem(row, 6, new QTableWidgetItem(query.value(10).toString()));
         // 公司名称
         ui->tableWidget_tickets->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
-
+        //内容居中显示
+        for (int i = 0; i < 8; ++i) {
+            if (ui->tableWidget_tickets->item(row, i)) {
+                ui->tableWidget_tickets->item(row, i)->setTextAlignment(Qt::AlignCenter);
+            }
+        }
         // 添加订票按钮
         QPushButton *btnBook = new QPushButton("订票");
         btnBook->setStyleSheet("background-color:#4CAF50; color:white; border:none; padding:2px 8px; border-radius:3px;");
@@ -557,7 +571,7 @@ void Deal::searchTickets(int pageNum)
 
         row++;
     }
-
+    query.finish();
     //调整表格列宽，优化显示
     ui->tableWidget_tickets->setUpdatesEnabled(true);
     ui->tableWidget_tickets->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
