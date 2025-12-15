@@ -199,16 +199,16 @@ void Deal::initTable()
             << "到达时间" << "价格(元)" << "可用座位" << "公司" << "操作" << "收藏";
     ui->tableWidget_tickets->setColumnCount(headers.size());
     ui->tableWidget_tickets->setHorizontalHeaderLabels(headers);
-    QHeaderView* header = ui->tableWidget_tickets->horizontalHeader();
-
-    // 设置所有列为“Stretch”模式（平均分配填充，随窗口拉伸）
-    header->setSectionResizeMode(QHeaderView::Stretch);
-
-    // 对特定列进行微调
-    header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // 编号列自适应内容
-    header->setSectionResizeMode(8, QHeaderView::ResizeToContents); // 操作列
-    header->setSectionResizeMode(9, QHeaderView::ResizeToContents); // 收藏列
-
+    // 关键列手动调整宽度（避免文字截断）
+    ui->tableWidget_tickets->setColumnWidth(1, 155);  //出发地
+    ui->tableWidget_tickets->setColumnWidth(2, 155);  //目的地
+    ui->tableWidget_tickets->setColumnWidth(3, 130);  // 出发时间
+    ui->tableWidget_tickets->setColumnWidth(4, 130);  // 到达时间
+    ui->tableWidget_tickets->setColumnWidth(5, 85);   // 价格(元)
+    ui->tableWidget_tickets->setColumnWidth(6, 80);   //可用座位
+    ui->tableWidget_tickets->setColumnWidth(7, 90);   //公司
+    ui->tableWidget_tickets->setColumnWidth(8, 55);   // 操作列
+    ui->tableWidget_tickets->setColumnWidth(9, 55);   //收藏
     ui->tableWidget_tickets->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_tickets->verticalHeader()->setVisible(false);

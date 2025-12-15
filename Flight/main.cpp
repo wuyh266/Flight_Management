@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
                                "PORT=3306;"
                                "DATABASE=flight;"
                                "USER=root;"
-                               "PASSWORD=328168;"
+                               "PASSWORD=a157621438;"
                                "OPTION=3;";
 
     dbcon.setDatabaseName(connectionString);
