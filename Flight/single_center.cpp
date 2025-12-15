@@ -55,20 +55,28 @@ void Single_Center::on_btn_back_clicked()
 }
 void Single_Center::initTable()
 {
-    ui->tableWidget_orders->setColumnCount(9);
     QStringList headers;
     headers << "订单号" << "航班号" << "路线" << "出发时间" << "到达时间"
             << "数量" << "总价(元)" << "状态" << "操作"<< "收藏";
+
     ui->tableWidget_orders->setColumnCount(headers.size());
     ui->tableWidget_orders->setHorizontalHeaderLabels(headers);
-    ui->tableWidget_orders->horizontalHeader()->setStretchLastSection(QHeaderView::Stretch);
-    ui->tableWidget_orders->setColumnWidth(1, 75);   //航班号
-    ui->tableWidget_orders->setColumnWidth(2, 270);  //路线
-    ui->tableWidget_orders->setColumnWidth(3, 125);  // 出发时间
-    ui->tableWidget_orders->setColumnWidth(4, 125);  // 到达时间
-    ui->tableWidget_orders->setColumnWidth(5, 50);   // 票数
-    ui->tableWidget_orders->setColumnWidth(7, 75);   //状态
 
+    QHeaderView* header = ui->tableWidget_orders->horizontalHeader();
+
+    //设置默认模式为 Stretch，确保所有列能填满整个页面宽度
+    header->setSectionResizeMode(QHeaderView::Stretch);
+
+    //根据内容自动收缩宽度
+    header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // 订单号
+    header->setSectionResizeMode(1, QHeaderView::ResizeToContents); // 航班
+    header->setSectionResizeMode(3, QHeaderView::ResizeToContents); // 出发时间
+    header->setSectionResizeMode(4, QHeaderView::ResizeToContents); // 到达时间
+    header->setSectionResizeMode(5, QHeaderView::ResizeToContents); // 数量
+    header->setSectionResizeMode(6, QHeaderView::ResizeToContents); // 总价
+    header->setSectionResizeMode(7, QHeaderView::ResizeToContents); // 状态
+    header->setSectionResizeMode(8, QHeaderView::ResizeToContents); // 操作
+    header->setSectionResizeMode(9, QHeaderView::ResizeToContents); // 收藏
     ui->tableWidget_orders->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_orders->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_orders->verticalHeader()->setVisible(false);

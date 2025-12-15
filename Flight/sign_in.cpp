@@ -17,10 +17,7 @@ Sign_in::Sign_in(QWidget *parent)
 
     QString styleSheet =
         "#signInWidget {\n"
-        "    background-image: url(:/images/flight2.png);\n"
-        "    background-position: center;\n"
-        "    background-repeat: no-repeat;\n"
-        "    background-size: cover;\n"
+        "    border-image: url(:/images/flight2.png);\n"
         "}\n";
 
     QFile qssFile(":/styles/style.qss");

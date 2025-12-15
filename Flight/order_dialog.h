@@ -2,7 +2,9 @@
 #define ORDER_DIALOG_H
 
 #include <QDialog>
-
+#include <QTableWidget>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
 namespace Ui {
 class OrderDialog;
 }
@@ -19,7 +21,7 @@ private slots:
     void on_btn_confirm_clicked();
     void on_btn_cancel_clicked();
     void on_spinBox_count_valueChanged(int count);
-
+    void on_btn_passenger_clicked();
 private:
     void loadTicketInfo();
     void calculateTotal();

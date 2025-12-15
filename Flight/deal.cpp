@@ -209,12 +209,9 @@ void Deal::initTable()
     ui->tableWidget_tickets->setColumnWidth(7, 90);   //公司
     ui->tableWidget_tickets->setColumnWidth(8, 55);   // 操作列
     ui->tableWidget_tickets->setColumnWidth(9, 55);   //收藏
-
     ui->tableWidget_tickets->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_tickets->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_tickets->verticalHeader()->setVisible(false);
-
-    // 优化：关闭表格自动刷新，批量插入数据后再刷新
     ui->tableWidget_tickets->setUpdatesEnabled(false);
 }
 
@@ -301,75 +298,70 @@ void Deal::initPagination()
     ui->lineEdit_pageNum->setValidator(validator);
     ui->lineEdit_pageNum->setAlignment(Qt::AlignCenter);
 
-    ui->label->setPixmap(QPixmap(":/img/LeftArrow.png"));
-    ui->label->setAlignment(Qt::AlignCenter);
-    ui->label->raise();
-    ui->label->setAttribute(Qt::WA_TransparentForMouseEvents);
+    ui->btn_prev->setIcon(QIcon(":/img/LeftArrow.png"));
+    ui->btn_prev->setIconSize(QSize(20, 20));
+    ui->btn_prev->setFlat(true);
+    ui->btn_prev->setCursor(Qt::PointingHandCursor);
 
-    ui->label_2->setPixmap(QPixmap(":/img/rightArrow.png"));
-    ui->label_2->setAlignment(Qt::AlignCenter);
-    ui->label_2->raise();
-    ui->label_2->setAttribute(Qt::WA_TransparentForMouseEvents);
+    // 下一页按钮
+    ui->btn_next->setIcon(QIcon(":/img/rightArrow.png"));
+    ui->btn_next->setIconSize(QSize(20, 20));
+    ui->btn_next->setFlat(true);
+    ui->btn_next->setCursor(Qt::PointingHandCursor);
 
-    // 上一页按钮
+    disconnect(ui->btn_prev, &QPushButton::clicked, nullptr, nullptr);
     connect(ui->btn_prev, &QPushButton::clicked, this, [=](){
         if (currentPage > 1) {
             currentPage--;
             searchTickets(currentPage);
-            updatePageContainerText();
-            ui->btn_prev->setEnabled(currentPage > 1);
-            ui->label->setStyleSheet("opacity: 1.0;");
         }
     });
 
-    // 下一页按钮
+    // 下一页按钮逻辑
+    disconnect(ui->btn_next, &QPushButton::clicked, nullptr, nullptr);
     connect(ui->btn_next, &QPushButton::clicked, this, [=](){
-        currentPage++;
-        searchTickets(currentPage);
-        updatePageContainerText();
-        ui->btn_next->setEnabled(currentPage < totalPage);
-        ui->label_2->setStyleSheet("opacity: 1.0;");
+        if (currentPage < totalPage) {
+            currentPage++;
+            searchTickets(currentPage);
+        }
     });
 
+    // 页码回车跳转
+    disconnect(ui->lineEdit_pageNum, &QLineEdit::returnPressed, nullptr, nullptr);
     connect(ui->lineEdit_pageNum, &QLineEdit::returnPressed, this, &Deal::on_lineEdit_pageNum_returnPressed);
 
-    // 初始化分页文本
+    //初始化状态
     updatePageContainerText();
-
-    bool prevEnabled = ui->btn_prev->isEnabled();
-    ui->label->setStyleSheet(QString("opacity: %1;").arg(prevEnabled ? 1.0 : 0.5));
-    bool nextEnabled = ui->btn_next->isEnabled();
-    ui->label_2->setStyleSheet(QString("opacity: %1;").arg(nextEnabled ? 1.0 : 0.5));
 }
+
 
 void Deal::updatePageContainerText()
 {
-    // 无数据时
     if (totalPage == 0) {
-        ui->label_pageInfo->setText("第        页 / 共 0 页");
+        ui->label_pageInfo->setText("  页 / 共 0 页");
         ui->lineEdit_pageNum->setEnabled(false);
         ui->lineEdit_pageNum->setText("");
+
+        // 禁用按钮
+        ui->btn_prev->setEnabled(false);
+        ui->btn_next->setEnabled(false);
         return;
     }
 
-    // 有数据时：拼接“第 [输入框] 页 / 共 X 页”
-    QString pageText = QString("第        页 / 共 %1 页").arg(totalPage);
-    if(totalPage<10) ui->lineEdit_pageNum->setGeometry(489,783,25,25);
+    // 有数据时的处理
+    QString pageText = QString("  页 / 共 %1 页").arg(totalPage);
     ui->label_pageInfo->setText(pageText);
+
+
     ui->lineEdit_pageNum->setEnabled(true);
     ui->lineEdit_pageNum->setText(QString::number(currentPage));
+    ui->lineEdit_pageNum->raise(); // 确保输入框在最上层
 
+    // 更新按钮状态
+    // 如果是第一页，禁用“上一页”；如果是最后一页，禁用“下一页”
     ui->btn_prev->setEnabled(currentPage > 1);
     ui->btn_next->setEnabled(currentPage < totalPage);
-    // 同步 Label 透明度
-    if (ui->label) ui->label->setStyleSheet(QString("opacity: %1;").arg(currentPage > 1 ? 1.0 : 0.5));
-    if (ui->label_2) ui->label_2->setStyleSheet(QString("opacity: %1;").arg(currentPage < totalPage ? 1.0 : 0.5));
-    // 确保输入框在标签上层
-    ui->lineEdit_pageNum->raise();
-    if (ui->label) ui->label->raise();
-    if (ui->label_2) ui->label_2->raise();
 }
-
 void Deal::on_lineEdit_pageNum_returnPressed()
 {
     // 无数据时直接返回
@@ -379,7 +371,7 @@ void Deal::on_lineEdit_pageNum_returnPressed()
         return;
     }
 
-    // 1. 获取输入并校验格式
+    // 获取输入并校验格式
     QString inputText = ui->lineEdit_pageNum->text().trimmed();
     if (inputText.isEmpty()) {
         QMessageBox::warning(this, "提示", "请输入有效页码！");
@@ -395,7 +387,7 @@ void Deal::on_lineEdit_pageNum_returnPressed()
         return;
     }
 
-    // 2. 边界校验
+    // 边界校验
     int targetPage = inputPage;
     if (targetPage < 1) {
         targetPage = 1;
@@ -405,17 +397,12 @@ void Deal::on_lineEdit_pageNum_returnPressed()
         QMessageBox::information(this, "提示", QString("已经到底了~"));
     }
 
-    // 3. 执行跳转
+    //执行跳转
     currentPage = targetPage;
     searchTickets(currentPage);
     // 更新按钮状态
     ui->btn_prev->setEnabled(currentPage > 1);
     ui->btn_next->setEnabled(currentPage < totalPage);
-
-    bool prevEnabled = ui->btn_prev->isEnabled();
-    ui->label->setStyleSheet(QString("opacity: %1;").arg(prevEnabled ? 1.0 : 0.5));
-    bool nextEnabled = ui->btn_next->isEnabled();
-    ui->label_2->setStyleSheet(QString("opacity: %1;").arg(nextEnabled ? 1.0 : 0.5));
 }
 
 void Deal::searchTickets(int pageNum)
@@ -687,4 +674,7 @@ void Deal::on_favorite_button_clicked()
 
     // 3. 切换界面显示到收藏夹页面
     ui->stackedWidget->setCurrentWidget(m_favoriteDialogPage);
+}
+void Deal::on_home_clicked(){
+    this->showTicketSearchPage();
 }

@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include <QRandomGenerator>
 #include<QFile>
+#include <QListWidget>
 OrderDialog::~OrderDialog()
 {
     delete ui;
@@ -29,7 +30,7 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
     ui->spinBox_count->setMinimum(1);
     ui->spinBox_count->setMaximum(10);
     ui->spinBox_count->setValue(1);
-    QFile qssFile(":/styles/order.qss");
+    QFile qssFile(":/styles/order_dialog.qss");
     if (qssFile.open(QFile::ReadOnly)) {
         QString styleSheet = QLatin1String(qssFile.readAll());
         this->setStyleSheet(styleSheet);  // 只影响当前窗口
@@ -406,4 +407,110 @@ void OrderDialog::loadUserBalance()
     } else {
         qDebug() << "查询余额失败:" << query.lastError().text();
     }
+}
+void OrderDialog::on_btn_passenger_clicked()
+{
+    if (!QSqlDatabase::database().isOpen()) {
+        QMessageBox::warning(this, "错误", "数据库未连接！");
+        return;
+    }
+
+    QDialog *dlg = new QDialog(this);
+    dlg->setWindowTitle("选择乘机人");
+    dlg->resize(350, 450);
+
+    QVBoxLayout *layout = new QVBoxLayout(dlg);
+
+    QListWidget *listWidget = new QListWidget(dlg);
+
+    listWidget->setStyleSheet(
+        "QListWidget { border: 1px solid #ccc; outline: none; }"
+        "QListWidget::item { padding: 10px; border-bottom: 1px solid #eee; }"
+        "QListWidget::item:hover { background-color: #f5f5f5; }"
+        "QListWidget::item:selected { background-color: #e6f7ff; color: #333; }"
+        "QListWidget::indicator { width: 20px; height: 20px; }"
+        );
+    layout->addWidget(listWidget);
+
+    QSqlQuery query;
+    query.prepare("SELECT Name, IDCard, Phone FROM passengers WHERE UserID = ?");
+    query.addBindValue(this->userId);
+
+    bool hasData = false;
+    if (query.exec()) {
+        while (query.next()) {
+            hasData = true;
+            QString name = query.value(0).toString();
+            QString idCard = query.value(1).toString();
+            QString phone = query.value(2).toString();
+
+            QListWidgetItem *item = new QListWidgetItem(name);
+
+            item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
+            item->setCheckState(Qt::Unchecked);
+
+            item->setData(Qt::UserRole, idCard);
+            item->setData(Qt::UserRole + 1, phone);
+
+            listWidget->addItem(item);
+        }
+    }
+
+    if (!hasData) {
+        QMessageBox::information(this, "提示", "您还没有添加常用乘机人，请先去个人中心添加。");
+        delete dlg;
+        return;
+    }
+
+    connect(listWidget, &QListWidget::itemClicked, dlg, [listWidget](QListWidgetItem *item){
+
+        listWidget->blockSignals(true);
+        for(int i = 0; i < listWidget->count(); ++i) {
+            QListWidgetItem *it = listWidget->item(i);
+            it->setCheckState(Qt::Unchecked);
+            it->setSelected(false);
+        }
+        item->setCheckState(Qt::Checked);
+        item->setSelected(true);
+        listWidget->blockSignals(false);
+    });
+
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    QPushButton *btnOk = new QPushButton("确定", dlg);
+    QPushButton *btnCancel = new QPushButton("取消", dlg);
+
+    btnOk->setStyleSheet("background-color: #4CAF50; color: white; border-radius: 4px; padding: 6px 15px;");
+    btnCancel->setStyleSheet("background-color: #f44336; color: white; border-radius: 4px; padding: 6px 15px;");
+
+    btnLayout->addStretch();
+    btnLayout->addWidget(btnOk);
+    btnLayout->addWidget(btnCancel);
+    layout->addLayout(btnLayout);
+
+    connect(btnOk, &QPushButton::clicked, dlg, &QDialog::accept);
+    connect(btnCancel, &QPushButton::clicked, dlg, &QDialog::reject);
+
+    connect(listWidget, &QListWidget::itemDoubleClicked, dlg, [dlg, listWidget](QListWidgetItem *item){
+        item->setCheckState(Qt::Checked);
+        dlg->accept();
+    });
+
+    if (dlg->exec() == QDialog::Accepted) {
+        QListWidgetItem *selectedItem = nullptr;
+        for(int i = 0; i < listWidget->count(); ++i) {
+            if (listWidget->item(i)->checkState() == Qt::Checked) {
+                selectedItem = listWidget->item(i);
+                break;
+            }
+        }
+
+        if (selectedItem) {
+            ui->lineEdit_name->setText(selectedItem->text());
+            ui->lineEdit_id->setText(selectedItem->data(Qt::UserRole).toString());
+            ui->lineEdit_phone->setText(selectedItem->data(Qt::UserRole + 1).toString());
+        } else {
+            QMessageBox::warning(this, "提示", "未选择任何乘机人！");
+        }
+    }
+    delete dlg;
 }

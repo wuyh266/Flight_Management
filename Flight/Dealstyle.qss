@@ -14,7 +14,7 @@ QLabel#Title {
     font-weight: 600;
 }
 
-/* 头像 */
+/* 头像按钮  */
 QPushButton#Avatar {
     /* 尺寸控制 */
     width: 40px;
@@ -315,4 +315,13 @@ QPushButton#btn_next {
     border: none;
     min-width: 30px;
     min-height: 30px;
+}
+/* 页码信息标签样式 - 统一字体和大小 */
+QLabel#label_pageInfo,
+QLabel#label_pageInfo_2 {
+    color: black;
+    font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+    font-size: 14px;   /* 保持与搜索栏一致 */
+    font-weight: 500;
+    background: transparent;
 }
