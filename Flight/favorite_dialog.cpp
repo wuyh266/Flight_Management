@@ -53,11 +53,22 @@ void favorite_dialog::initTable()
             << "出发时间" << "到达时间" << "价格（元）" << "公司" << "收藏";
     ui->tableWidget_favorites->setHorizontalHeaderLabels(headers);
     ui->tableWidget_favorites->setColumnCount(headers.size());
-    ui->tableWidget_favorites->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->tableWidget_favorites->horizontalHeader()->setStretchLastSection(true);
+    QHeaderView *header = ui->tableWidget_favorites->horizontalHeader();
+    header->setSectionResizeMode(2, QHeaderView::Stretch);//出发地
+    header->setSectionResizeMode(3, QHeaderView::Stretch);//目的地
+    header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // 类型
+    header->setSectionResizeMode(1, QHeaderView::ResizeToContents); // 编号
+    header->setSectionResizeMode(4, QHeaderView::ResizeToContents); // 出发时间
+    header->setSectionResizeMode(5, QHeaderView::ResizeToContents); // 到达时间
+    header->setSectionResizeMode(7, QHeaderView::ResizeToContents); // 公司
+    header->setSectionResizeMode(6, QHeaderView::Interactive);
+    ui->tableWidget_favorites->setColumnWidth(6, 85);
+    header->setSectionResizeMode(8, QHeaderView::Fixed);
+    ui->tableWidget_favorites->setColumnWidth(8, 70);
     ui->tableWidget_favorites->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_favorites->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_favorites->verticalHeader()->setVisible(false);
+    header->setDefaultAlignment(Qt::AlignCenter);
 }
 
 void favorite_dialog::loadFavorites()
@@ -101,7 +112,11 @@ void favorite_dialog::loadFavorites()
         ui->tableWidget_favorites->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
         ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(8).toDouble(), 'f', 2)));
         ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
-
+        for (int i = 0; i < 8; ++i) {
+            if (ui->tableWidget_favorites->item(row, i)) {
+                ui->tableWidget_favorites->item(row, i)->setTextAlignment(Qt::AlignCenter);
+            }
+        }
         // 添加移除按钮
         QPushButton *btnRemove = new QPushButton("移除");
         btnRemove->setProperty("ticketId", ticketId);
@@ -166,7 +181,6 @@ void favorite_dialog::on_searchBtn_clicked()
     QString arrCity = ui->lineEdit_arr->text().trimmed();     // 目的地
     QDate startDate = ui->dateEdit_begin->date();             // 开始日期
     QDate endDate = ui->dateEdit_end->date();                 // 结束日期
-    QString type = ui->comboBox_type->currentText();          // 交通类型
 
     QString sql = "SELECT t.flight_id, t.flight_number, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
                   "t.departure_time, t.arrival_time, t.price, t.airline_company "
@@ -223,7 +237,12 @@ void favorite_dialog::on_searchBtn_clicked()
         ui->tableWidget_favorites->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
         ui->tableWidget_favorites->setItem(row, 6, new QTableWidgetItem(QString::number(query.value(8).toDouble(), 'f', 2)));
         ui->tableWidget_favorites->setItem(row, 7, new QTableWidgetItem(query.value(9).toString()));
-
+        //内容居中
+        for (int i = 0; i < 8; ++i) {
+            if (ui->tableWidget_favorites->item(row, i)) {
+                ui->tableWidget_favorites->item(row, i)->setTextAlignment(Qt::AlignCenter);
+            }
+        }
         QPushButton *btnRemove = new QPushButton("移除");
         btnRemove->setProperty("ticketId", ticketId);
         connect(btnRemove, &QPushButton::clicked, this, &favorite_dialog::onRemoveFavorite);

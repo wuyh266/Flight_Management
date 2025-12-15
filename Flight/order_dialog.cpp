@@ -25,6 +25,9 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("填写订单信息");
     setModal(true);
+    ui->comboBox_class->addItem("经济舱");
+    ui->comboBox_class->addItem("商务舱");
+    connect(ui->comboBox_class, &QComboBox::currentIndexChanged, this, &OrderDialog::calculateTotal);
     loadTicketInfo();
     loadUserBalance();
     ui->spinBox_count->setMinimum(1);
@@ -92,7 +95,11 @@ void OrderDialog::on_spinBox_count_valueChanged(int count)
 void OrderDialog::calculateTotal()
 {
     int count = ui->spinBox_count->value();
-    double total = ticketPrice * count;
+    double currentPrice = ticketPrice;
+    if (ui->comboBox_class->currentText() == "商务舱") {
+        currentPrice += 200.0; // 商务舱加价200
+    }
+    double total = currentPrice * count;
     ui->label_total->setText(QString::number(total, 'f', 2) + " 元");
     if(ui->label_balance){
         if(userBalance<total){
@@ -151,6 +158,7 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
             qint64 transferSeconds = existingArrTime.secsTo(newDepTime);
             if (transferSeconds < minTransferTime * 60) {
                 qDebug() << "换乘时间不足:" << transferSeconds / 60 << "分钟";
+                query.finish();
                 return true;
             }
         }
@@ -160,6 +168,7 @@ bool OrderDialog::checkTimeConflict(const QString&passengerIDCard,int newTicketI
             qint64 transferSeconds = newArrTime.secsTo(existingDepTime);
             if (transferSeconds < minTransferTime * 60) {
                 qDebug() << "换乘时间不足:" << transferSeconds / 60 << "分钟";
+                query.finish();
                 return true;
             }
         }
@@ -333,8 +342,9 @@ void OrderDialog::on_btn_confirm_clicked()
         // 插入订单
         QSqlQuery insertQuery(db);
         insertQuery.prepare("INSERT INTO orders (UserID, TicketID, OrderNo, PassengerName, "
-                            "PassengerIDCard, ContactPhone, TicketCount, TotalPrice, OrderStatus) "
-                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Paid')");
+                            "PassengerIDCard, ContactPhone, TicketCount, TotalPrice, OrderStatus,CabinClass) "
+                            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Paid',?)");
+        QString cabinClass = ui->comboBox_class->currentText();
         insertQuery.addBindValue(userId);
         insertQuery.addBindValue(ticketId);
         insertQuery.addBindValue(orderNo);
@@ -342,7 +352,11 @@ void OrderDialog::on_btn_confirm_clicked()
         insertQuery.addBindValue(passengerID);
         insertQuery.addBindValue(contactPhone);
         insertQuery.addBindValue(count);
-        insertQuery.addBindValue(ticketPrice * count);
+        double currentPrice = ticketPrice;
+        if (cabinClass == "商务舱") currentPrice += 200.0;
+        insertQuery.addBindValue(currentPrice * count);
+
+        insertQuery.addBindValue(cabinClass);
 
         if (!insertQuery.exec()) {
             db.rollback();

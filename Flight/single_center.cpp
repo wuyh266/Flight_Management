@@ -56,7 +56,7 @@ void Single_Center::on_btn_back_clicked()
 void Single_Center::initTable()
 {
     QStringList headers;
-    headers << "订单号" << "航班号" << "路线" << "出发时间" << "到达时间"
+    headers << "订单号" << "航班号" <<"舱位"<< "路线" << "出发时间" << "到达时间"
             << "数量" << "总价(元)" << "状态" << "操作"<< "收藏";
 
     ui->tableWidget_orders->setColumnCount(headers.size());
@@ -64,19 +64,21 @@ void Single_Center::initTable()
 
     QHeaderView* header = ui->tableWidget_orders->horizontalHeader();
 
-    //设置默认模式为 Stretch，确保所有列能填满整个页面宽度
-    header->setSectionResizeMode(QHeaderView::Stretch);
-
-    //根据内容自动收缩宽度
+    header->setSectionResizeMode(3, QHeaderView::Stretch);
     header->setSectionResizeMode(0, QHeaderView::ResizeToContents); // 订单号
-    header->setSectionResizeMode(1, QHeaderView::ResizeToContents); // 航班
-    header->setSectionResizeMode(3, QHeaderView::ResizeToContents); // 出发时间
-    header->setSectionResizeMode(4, QHeaderView::ResizeToContents); // 到达时间
-    header->setSectionResizeMode(5, QHeaderView::ResizeToContents); // 数量
-    header->setSectionResizeMode(6, QHeaderView::ResizeToContents); // 总价
-    header->setSectionResizeMode(7, QHeaderView::ResizeToContents); // 状态
-    header->setSectionResizeMode(8, QHeaderView::ResizeToContents); // 操作
-    header->setSectionResizeMode(9, QHeaderView::ResizeToContents); // 收藏
+    header->setSectionResizeMode(1, QHeaderView::ResizeToContents); // 航班号
+    header->setSectionResizeMode(2, QHeaderView::ResizeToContents); // 舱位
+    header->setSectionResizeMode(4, QHeaderView::ResizeToContents); // 出发时间
+    header->setSectionResizeMode(5, QHeaderView::ResizeToContents); // 到达时间
+    header->setSectionResizeMode(8, QHeaderView::ResizeToContents); // 状态
+    header->setSectionResizeMode(6, QHeaderView::Interactive); // 数量
+    header->setSectionResizeMode(7, QHeaderView::Interactive); // 总价
+    ui->tableWidget_orders->setColumnWidth(6, 60);
+    ui->tableWidget_orders->setColumnWidth(7, 80);
+    header->setSectionResizeMode(9, QHeaderView::Fixed);
+    header->setSectionResizeMode(10, QHeaderView::Fixed);
+    ui->tableWidget_orders->setColumnWidth(9, 80);
+    ui->tableWidget_orders->setColumnWidth(10, 60);
     ui->tableWidget_orders->setEditTriggers(QAbstractItemView::NoEditTriggers);
     ui->tableWidget_orders->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->tableWidget_orders->verticalHeader()->setVisible(false);
@@ -125,7 +127,7 @@ void Single_Center::loadOrders()
     QSqlQuery query(db);  // 显式指定数据库连接
     query.prepare("SELECT o.OrderID, o.OrderNo, o.OrderStatus, o.TicketCount, o.TotalPrice, "
                   "o.OrderTime, t.departure_city, t.departure_airport, t.arrival_city, t.arrival_airport, "
-                  "t.departure_time, t.arrival_time, t.flight_number, t.flight_id "
+                  "t.departure_time, t.arrival_time, t.flight_number, t.flight_id ,o.CabinClass "
                   "FROM orders o "
                   "JOIN flight_info t ON o.TicketID = t.flight_id "
                   "WHERE o.UserID = ? "
@@ -151,6 +153,8 @@ void Single_Center::loadOrders()
         QDateTime arrTime = query.value(11).toDateTime();
 
         QString typeName = query.value(12).toString();
+        QString cabinClass = query.value(14).toString();
+        if(cabinClass.isEmpty()) cabinClass = "经济舱";
         QString statusName = status == "Paid" ? "已支付" : (status == "Cancelled" ? "已取消" : "待支付");
 
         //判断订单是否过期，是否支付
@@ -172,28 +176,33 @@ void Single_Center::loadOrders()
 
         ui->tableWidget_orders->setItem(row, 0, new QTableWidgetItem(orderNo));
         ui->tableWidget_orders->setItem(row, 1, new QTableWidgetItem(typeName));
-        ui->tableWidget_orders->setItem(row, 2, new QTableWidgetItem(route));
-        ui->tableWidget_orders->setItem(row, 3, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
-        ui->tableWidget_orders->setItem(row, 4, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
-        ui->tableWidget_orders->setItem(row, 5, new QTableWidgetItem(QString::number(count)));
-        ui->tableWidget_orders->setItem(row, 6, new QTableWidgetItem(QString::number(totalPrice, 'f', 2)));
-        ui->tableWidget_orders->setItem(row, 7, new QTableWidgetItem(statusName));
-
+        ui->tableWidget_orders->setItem(row, 2, new QTableWidgetItem(cabinClass));
+        ui->tableWidget_orders->setItem(row, 3, new QTableWidgetItem(route));
+        ui->tableWidget_orders->setItem(row, 4, new QTableWidgetItem(depTime.toString("yyyy-MM-dd hh:mm")));
+        ui->tableWidget_orders->setItem(row, 5, new QTableWidgetItem(arrTime.toString("yyyy-MM-dd hh:mm")));
+        ui->tableWidget_orders->setItem(row, 6, new QTableWidgetItem(QString::number(count)));
+        ui->tableWidget_orders->setItem(row, 7, new QTableWidgetItem(QString::number(totalPrice, 'f', 2)));
+        ui->tableWidget_orders->setItem(row, 8, new QTableWidgetItem(statusName));
+        for (int i = 0; i <= 8; ++i) {
+            if (ui->tableWidget_orders->item(row, i)) {
+                ui->tableWidget_orders->item(row, i)->setTextAlignment(Qt::AlignCenter);
+            }
+        }
         // 添加取消订单按钮（只有已支付的订单可以取消）
         if (status == "Paid" && arrTime > QDateTime::currentDateTime()) {
             QPushButton *btnCancel = new QPushButton("取消订单");
             btnCancel->setProperty("orderId", orderId);
             connect(btnCancel, &QPushButton::clicked, this, &Single_Center::onCancelOrder);
-            ui->tableWidget_orders->setCellWidget(row, 8, btnCancel);
+            ui->tableWidget_orders->setCellWidget(row, 9, btnCancel);
 
         } else if(status == "Paid" && arrTime < QDateTime::currentDateTime()) {
             QPushButton *btndelete = new QPushButton("删除订单");
             btndelete->setProperty("orderId", orderId);
             connect(btndelete, &QPushButton::clicked, this, &Single_Center::onDeleteOrder);
-            ui->tableWidget_orders->setCellWidget(row, 8, btndelete);
+            ui->tableWidget_orders->setCellWidget(row, 9, btndelete);
 
         } else {
-            ui->tableWidget_orders->setItem(row, 8, new QTableWidgetItem("-"));
+            ui->tableWidget_orders->setItem(row, 9, new QTableWidgetItem("-"));
         }
 
         int ticketId=query.value("flight_id").toInt();
@@ -205,7 +214,7 @@ void Single_Center::loadOrders()
             btnFav->setEnabled(false);
         }
         connect(btnFav, &QPushButton::clicked, this, &Single_Center::onAddFavorite);
-        ui->tableWidget_orders->setCellWidget(row, 9, btnFav);
+        ui->tableWidget_orders->setCellWidget(row, 10, btnFav);
 
         row++;
     }
