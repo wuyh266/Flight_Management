@@ -15,14 +15,30 @@ QLabel#Title {
 }
 
 /* 头像 */
-QLabel#Avatar {
-    width: 40px; height: 40px;
-    min-width: 40px; min-height: 40px;
-    max-width: 40px; max-height: 40px;
-    border-radius: 20px;  /* 关键：一半宽度 = 圆形 */
+QPushButton#Avatar {
+    /* 尺寸控制 */
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+
+    /* 圆形效果 */
+    border-radius: 20px;  /* 一半宽度 = 圆形 */
     border: 1px solid rgba(255,255,255,0.6);
+
+    /* 按钮样式 */
     background-color: transparent;
-    qproperty-alignment: AlignCenter;
+    padding: 0px;        /* 重要：去除按钮默认内边距 */
+    margin: 0px;         /* 去除外边距 */
+    border-style: solid; /* 明确边框样式 */
+
+    /* 光标 */
+    cursor: pointer;     /* 手型光标 */
+
+    /* 确保图标正常显示 */
+    qproperty-iconSize: 40px 40px;  /* 图标大小 */
 }
 /* Frame：高级灰绿色 */
 QFrame#btn_frame,
