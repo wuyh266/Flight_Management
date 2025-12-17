@@ -27,7 +27,10 @@ OrderDialog::OrderDialog(int ticketId, int userId, QWidget *parent)
     setModal(true);
     ui->comboBox_class->addItem("经济舱");
     ui->comboBox_class->addItem("商务舱");
-    connect(ui->comboBox_class, &QComboBox::currentIndexChanged, this, &OrderDialog::calculateTotal);
+    connect(ui->comboBox_class,
+            static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this,
+            &OrderDialog::calculateTotal);
     loadTicketInfo();
     loadUserBalance();
     ui->spinBox_count->setMinimum(1);
@@ -254,6 +257,8 @@ void OrderDialog::on_btn_confirm_clicked()
     QString passengerID = ui->lineEdit_id->text().trimmed();
     QString contactPhone = ui->lineEdit_phone->text().trimmed();
     int count = ui->spinBox_count->value();
+    QString cabinClass = ui->comboBox_class->currentText();
+
     //检测金额是否超出余额
     loadUserBalance();
     double TotalCost=ticketPrice*count;
@@ -315,7 +320,13 @@ void OrderDialog::on_btn_confirm_clicked()
         QMessageBox::warning(this, "行程冲突", message);
         return;
     }
+    bool hasCancelledOrder = checkAndReactivateCancelledOrder(passengerName, passengerID,
+                                                              contactPhone, cabinClass, count);
 
+    if (hasCancelledOrder) {
+
+        return;
+    }
     // 检查可用座位数
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery checkQuery(db);
@@ -393,7 +404,224 @@ void OrderDialog::on_btn_confirm_clicked()
         QMessageBox::critical(this, "错误", "订票过程中发生错误！");
     }
 }
+bool OrderDialog::checkAndReactivateCancelledOrder(const QString &passengerName,
+                                                   const QString &passengerID,
+                                                   const QString &contactPhone,
+                                                   const QString &cabinClass,
+                                                   int count)
+{
+    QSqlDatabase db = QSqlDatabase::database();
 
+    // 查询是否存在已取消的、所有信息都相同的订单
+    QSqlQuery query(db);
+    query.prepare(R"(
+        SELECT o.OrderID, o.TotalPrice, o.OrderTime,
+               f.availableSeat, f.price, f.departure_time
+        FROM orders o
+        JOIN flight_info f ON o.TicketID = f.flight_id
+        WHERE o.UserID = ?
+          AND o.TicketID = ?
+          AND o.PassengerName = ?
+          AND o.PassengerIDCard = ?
+          AND o.ContactPhone = ?
+          AND o.CabinClass = ?
+          AND o.TicketCount = ?
+          AND o.OrderStatus = 'Cancelled'
+        ORDER BY o.OrderTime DESC
+        LIMIT 1
+    )");
+
+    query.addBindValue(userId);
+    query.addBindValue(ticketId);
+    query.addBindValue(passengerName);
+    query.addBindValue(passengerID);
+    query.addBindValue(contactPhone);
+    query.addBindValue(cabinClass);
+    query.addBindValue(count);
+
+    if (!query.exec()) {
+        qDebug() << "查询已取消订单失败:" << query.lastError().text();
+        return false;
+    }
+
+    if (query.next()) {
+        int cancelledOrderId = query.value(0).toInt();
+        double oldTotalPrice = query.value(1).toDouble();
+        QDateTime oldOrderTime = query.value(2).toDateTime();
+        int availableSeats = query.value(3).toInt();
+        double basePrice = query.value(4).toDouble();
+        QDateTime depTime = query.value(5).toDateTime();
+
+        // 检查航班是否已起飞
+        if (depTime < QDateTime::currentDateTime()) {
+            QMessageBox::warning(this, "无法恢复", "该航班已起飞，无法恢复已取消的订单。");
+            return false;
+        }
+
+        // 检查是否还有足够座位
+        if (availableSeats < count) {
+            QMessageBox::warning(this, "座位不足",
+                                 QString("该航班只剩 %1 个座位，无法恢复原订单。").arg(availableSeats));
+            return false;
+        }
+
+        // 计算新的总价
+        double currentPrice = basePrice;
+        if (cabinClass == "商务舱") {
+            currentPrice += 200.0;
+        }
+        double newTotalPrice = currentPrice * count;
+
+        // 检查余额是否足够
+        loadUserBalance(); // 重新加载余额
+
+        QString balanceInfo;
+        if (userBalance >= newTotalPrice) {
+            balanceInfo = QString("您的余额：¥%1（充足）").arg(userBalance, 0, 'f', 2);
+        } else {
+            balanceInfo = QString("您的余额：¥%1（不足）").arg(userBalance, 0, 'f', 2);
+        }
+
+        // 询问用户是否要恢复已取消的订单
+        QString message = QString("发现您有一个已取消的相同订单：\n\n"
+                                  "原订单号：%1\n"
+                                  "原下单时间：%2\n"
+                                  "原总价：¥%3\n"
+                                  "现总价：¥%4\n"
+                                  "%5\n\n"
+                                  "恢复订单将自动完成支付，是否继续？")
+                              .arg(cancelledOrderId)
+                              .arg(oldOrderTime.toString("yyyy-MM-dd hh:mm"))
+                              .arg(oldTotalPrice, 0, 'f', 2)
+                              .arg(newTotalPrice, 0, 'f', 2)
+                              .arg(balanceInfo);
+
+        QMessageBox msgBox(this);
+        msgBox.setWindowTitle("恢复已取消订单");
+        msgBox.setText(message);
+        msgBox.setIcon(QMessageBox::Question);
+
+        QPushButton *restoreButton = nullptr;
+        QPushButton *newOrderButton = nullptr;
+        QPushButton *cancelButton = nullptr;
+
+        if (userBalance >= newTotalPrice) {
+            // 余额充足，可以恢复
+            restoreButton = msgBox.addButton("恢复订单并支付", QMessageBox::AcceptRole);
+            newOrderButton = msgBox.addButton("创建新订单", QMessageBox::ActionRole);
+            cancelButton = msgBox.addButton("取消", QMessageBox::RejectRole);
+        } else {
+            // 余额不足，只能创建新订单或取消
+            QMessageBox::warning(this, "余额不足",
+                                 "余额不足，无法恢复订单。请先充值或创建新订单。");
+            newOrderButton = msgBox.addButton("创建新订单", QMessageBox::ActionRole);
+            cancelButton = msgBox.addButton("取消", QMessageBox::RejectRole);
+        }
+
+        msgBox.exec();
+
+        if (restoreButton && msgBox.clickedButton() == restoreButton) {
+            // 恢复订单并支付
+            return restoreCancelledOrder(cancelledOrderId, newTotalPrice, count);
+
+        } else if (msgBox.clickedButton() == newOrderButton) {
+            // 用户选择创建新订单，继续原来的流程
+            return false;
+        } else {
+            // 用户取消
+            return true; // 返回true表示已处理，不继续订票流程
+        }
+    }
+
+    return false; // 没有找到可恢复的订单
+}
+bool OrderDialog::restoreCancelledOrder(int orderId, double newTotalPrice, int ticketCount)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+
+    // 开始事务
+    db.transaction();
+
+    try {
+        QSqlQuery query(db);
+
+        // 1. 检查座位是否仍然足够
+        query.prepare("SELECT availableSeat FROM flight_info WHERE flight_id = ?");
+        query.addBindValue(ticketId);
+        if (!query.exec() || !query.next()) {
+            throw std::runtime_error("查询座位失败");
+        }
+
+        int availableSeats = query.value(0).toInt();
+        if (availableSeats < ticketCount) {
+            throw std::runtime_error(QString("座位不足，只剩 %1 个").arg(availableSeats).toStdString());
+        }
+
+        // 2. 检查用户余额是否足够（使用本地变量，先不重新查询数据库）
+        if (userBalance < newTotalPrice) {
+            QMessageBox::warning(this, "余额不足",
+                                 QString("您的余额不足！\n当前余额: ¥%1\n订单金额: ¥%2\n请先充值。")
+                                     .arg(userBalance, 0, 'f', 2)
+                                     .arg(newTotalPrice, 0, 'f', 2));
+            db.rollback();
+            return false;
+        }
+
+        // 3. 占用座位
+        query.prepare("UPDATE flight_info SET availableSeat = availableSeat - ? WHERE flight_id = ?");
+        query.addBindValue(ticketCount);
+        query.addBindValue(ticketId);
+        if (!query.exec()) {
+            throw std::runtime_error("更新座位失败: " + query.lastError().text().toStdString());
+        }
+
+        // 4. 扣款
+        query.prepare("UPDATE users SET Balance = Balance - ? WHERE UserID = ?");
+        query.addBindValue(newTotalPrice);
+        query.addBindValue(userId);
+        if (!query.exec()) {
+            throw std::runtime_error("扣款失败: " + query.lastError().text().toStdString());
+        }
+
+        // 5. 更新订单状态为 'Paid'，更新价格和时间
+        query.prepare("UPDATE orders SET OrderStatus = 'Paid', TotalPrice = ?, "
+                      "OrderTime = ? WHERE OrderID = ?");
+        query.addBindValue(newTotalPrice);
+        query.addBindValue(QDateTime::currentDateTime());
+        query.addBindValue(orderId);
+        if (!query.exec()) {
+            throw std::runtime_error("更新订单信息失败: " + query.lastError().text().toStdString());
+        }
+
+        // 提交事务
+        if (!db.commit()) {
+            throw std::runtime_error("提交事务失败");
+        }
+
+        // 更新本地余额
+        userBalance -= newTotalPrice;
+        if (ui->label_balance) {
+            ui->label_balance->setText(QString("当前余额: ¥ %1").arg(userBalance, 0, 'f', 2));
+            ui->label_balance->setStyleSheet("color: green; font-weight: bold;");
+        }
+
+        // 成功恢复并支付
+        QMessageBox::information(this, "成功",
+                                 QString("订单 #%1 已成功恢复并完成支付！\n\n"
+                                         "支付金额：¥%2\n"
+                                         "剩余余额：¥%3")
+                                     .arg(orderId)
+                                     .arg(newTotalPrice, 0, 'f', 2)
+                                     .arg(userBalance, 0, 'f', 2));
+        accept();
+        return true;
+
+    } catch (const std::exception &e) {
+        db.rollback();
+        QMessageBox::critical(this, "恢复失败", QString("恢复订单失败：%1").arg(e.what()));
+        return false;
+    }
+}
 void OrderDialog::on_btn_cancel_clicked()
 {
     reject();

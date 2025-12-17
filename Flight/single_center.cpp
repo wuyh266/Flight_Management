@@ -10,6 +10,7 @@
 #include <QDateTime>
 #include <QTableWidgetItem>
 #include<QFile>
+#include<order_dialog.h>
 Single_Center::Single_Center(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::Single_Center)
@@ -201,7 +202,14 @@ void Single_Center::loadOrders()
             connect(btndelete, &QPushButton::clicked, this, &Single_Center::onDeleteOrder);
             ui->tableWidget_orders->setCellWidget(row, 9, btndelete);
 
-        } else {
+        }else if(status=="Cancelled"&&arrTime > QDateTime::currentDateTime()){
+            QPushButton *btnBuyagaint = new QPushButton("重新购票");
+            btnBuyagaint->setProperty("orderId", orderId);
+            connect(btnBuyagaint, &QPushButton::clicked, this, &Single_Center::onRebuyTicket);
+            ui->tableWidget_orders->setCellWidget(row, 9, btnBuyagaint);
+
+        }
+        else {
             ui->tableWidget_orders->setItem(row, 9, new QTableWidgetItem("-"));
         }
 
@@ -226,7 +234,32 @@ void Single_Center::refreshOrderList()
 {
     loadOrders();
 }
+void Single_Center::onRebuyTicket()
+{
+    QPushButton *btn = qobject_cast<QPushButton*>(sender());
+    if (!btn) return;
 
+    int orderId = btn->property("orderId").toInt();
+
+    // 获取航班ID和用户ID
+    int userId = getUserId();
+    QSqlQuery query;
+    query.prepare("SELECT TicketID FROM orders WHERE OrderID = ?");
+    query.addBindValue(orderId);
+
+    if (!query.exec() || !query.next()) {
+        QMessageBox::critical(this, "错误", "获取订单信息失败");
+        return;
+    }
+
+    int flightId = query.value(0).toInt();
+
+    OrderDialog *dialog = new OrderDialog(flightId, userId, this);
+    dialog->exec();
+
+    // 刷新订单列表
+    loadOrders();
+}
 void Single_Center::onCancelOrder()
 {
     QPushButton *btn = qobject_cast<QPushButton*>(sender());

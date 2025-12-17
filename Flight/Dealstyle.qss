@@ -34,8 +34,7 @@ QPushButton#Avatar {
     margin: 0px;         /* 去除外边距 */
     border-style: solid; /* 明确边框样式 */
 
-    /* 光标 */
-    cursor: pointer;     /* 手型光标 */
+
 
     /* 确保图标正常显示 */
     qproperty-iconSize: 40px 40px;  /* 图标大小 */
@@ -72,7 +71,7 @@ QPushButton#favorite_button:hover,
 QPushButton#home:hover {
     background: #207157;            /* 稍亮一点的绿色 */
     border: 1px solid #14533f;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 轻微阴影提升层次 */
+
 }
 
 /* 按下效果 */
@@ -102,10 +101,6 @@ QGroupBox#searchGroup {
     margin-top: 16px;
     padding-top: 12px;
 
-    /* 明显的凹陷效果 */
-    box-shadow:
-        inset 3px 3px 5px rgba(0, 0, 0, 0.15),
-        inset -3px -3px 5px rgba(0, 0, 0, 0.05);
 
     /* 可选：添加外边框增强效果 */
     border-top: 1px solid #e8e8e8;
@@ -125,8 +120,6 @@ QGroupBox#searchGroup::title {
     font-weight: 600;                       /* 加粗 */
     font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
 
-    /* 标题添加自己的阴影效果 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 /* 四个标签的样式 */
 QLabel#label_date,
@@ -167,8 +160,7 @@ QPushButton#btn_search:hover {
                                 stop:0 #38b07e,
                                 stop:1 #2f976c);
 
-    /* 可选：添加轻微阴影增强悬浮感 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+
 }
 
 /* 按下效果 */
@@ -198,11 +190,7 @@ QTableWidget {
     border: 2px solid #d0dbd6;              /* 浅灰绿边框 */
     border-radius: 8px;                     /* 圆角 */
 
-    /* 凹陷效果 */
-    box-shadow:
-        inset 2px 2px 4px rgba(0, 0, 0, 0.08),    /* 内阴影上左 */
-        inset -2px -2px 4px rgba(0, 0, 0, 0.03),  /* 内阴影下右 */
-        0 1px 3px rgba(0, 0, 0, 0.05);            /* 轻微外阴影增加层次 */
+
 
     /* 表格字体 */
     font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;

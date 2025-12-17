@@ -27,6 +27,8 @@ private:
     void calculateTotal();
     void loadUserBalance();
     bool checkTimeConflict(const QString &passengerIDCard, int newTicketId);
+    bool restoreCancelledOrder(int orderId, double newTotalPrice, int ticketCount);
+    bool checkAndReactivateCancelledOrder(const QString &passengerName,  const QString &passengerID,const QString &contactPhone,const QString &cabinClass,int count);
     QString getConflictDetails(const QString &passengerIDCard, int newTicketId);
     Ui::OrderDialog *ui;
     int ticketId;
