@@ -62,3 +62,5 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-12-01 15:56:41
+use flight;
+ALTER TABLE orders ADD COLUMN CabinClass VARCHAR(20) DEFAULT '经济舱';

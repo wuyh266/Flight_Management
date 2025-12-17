@@ -27,6 +27,7 @@ private slots:
     void onViewOrder();
     void on_btn_back_clicked();
     void onAddFavorite();
+    void onRebuyTicket();
 private:
     void initTable();
     void loadOrders();
